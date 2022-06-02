@@ -18,7 +18,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/gdamore/tcell/v2/terminfo"
+	"github.com/ernestrc/tcell/v2/terminfo"
 )
 
 var (

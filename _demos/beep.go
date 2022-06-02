@@ -23,7 +23,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/gdamore/tcell/v2"
+	"github.com/ernestrc/tcell/v2"
 )
 
 func main() {

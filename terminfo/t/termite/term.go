@@ -2,7 +2,7 @@
 
 package termite
 
-import "github.com/gdamore/tcell/v2/terminfo"
+import "github.com/ernestrc/tcell/v2/terminfo"
 
 func init() {
 
