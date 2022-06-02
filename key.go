@@ -47,6 +47,7 @@ type EventKey struct {
 	mod ModMask
 	key Key
 	ch  rune
+	raw []byte
 }
 
 // When returns the time when this Event was created, which should closely
@@ -76,6 +77,11 @@ func (ev *EventKey) Key() Key {
 // using this in most circumstances.
 func (ev *EventKey) Modifiers() ModMask {
 	return ev.mod
+}
+
+// Raw returns the raw byte sequence that produced this key event.
+func (ev *EventKey) Raw() []byte {
+	return ev.raw
 }
 
 // KeyNames holds the written names of special keys. Useful to echo back a key
@@ -240,7 +246,7 @@ func (ev *EventKey) Name() string {
 // ASCII control sequences if KeyRune is passed for Key, but if the caller
 // has more precise information it should set that specifically.  Callers
 // that aren't sure about modifier state (most) should just pass ModNone.
-func NewEventKey(k Key, ch rune, mod ModMask) *EventKey {
+func NewEventKey(k Key, ch rune, mod ModMask, raw []byte) *EventKey {
 	if k == KeyRune && (ch < ' ' || ch == 0x7f) {
 		// Turn specials into proper key codes.  This is for
 		// control characters and the DEL.
@@ -255,7 +261,7 @@ func NewEventKey(k Key, ch rune, mod ModMask) *EventKey {
 			}
 		}
 	}
-	return &EventKey{t: time.Now(), key: k, ch: ch, mod: mod}
+	return &EventKey{t: time.Now(), key: k, ch: ch, mod: mod, raw: raw}
 }
 
 // ModMask is a mask of modifier keys.  Note that it will not always be

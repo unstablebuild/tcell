@@ -1212,7 +1212,7 @@ func (t *tScreen) clip(x, y int) (int, int) {
 // buildMouseEvent returns an event based on the supplied coordinates and button
 // state. Note that the screen's mouse button state is updated based on the
 // input to this function (i.e. it mutates the receiver).
-func (t *tScreen) buildMouseEvent(x, y, btn int) *EventMouse {
+func (t *tScreen) buildMouseEvent(x, y, btn int, raw []byte) *EventMouse {
 
 	// XTerm mouse events only report at most one button at a time,
 	// which may include a wheel button.  Wheel motion events are
@@ -1268,7 +1268,7 @@ func (t *tScreen) buildMouseEvent(x, y, btn int) *EventMouse {
 	// to the screen in that case.
 	x, y = t.clip(x, y)
 
-	return NewEventMouse(x, y, button, mod)
+	return NewEventMouse(x, y, button, mod, raw)
 }
 
 // parseSgrMouse attempts to locate an SGR mouse record at the start of the
@@ -1380,11 +1380,12 @@ func (t *tScreen) parseSgrMouse(buf *bytes.Buffer, evs *[]Event) (bool, bool) {
 				t.buttondn = true
 			}
 			// consume the event bytes
+			raw := cloneBuf(buf, i+1)
 			for i >= 0 {
 				_, _ = buf.ReadByte()
 				i--
 			}
-			*evs = append(*evs, t.buildMouseEvent(x, y, btn))
+			*evs = append(*evs, t.buildMouseEvent(x, y, btn, raw))
 			return true, true
 		}
 	}
@@ -1433,15 +1434,22 @@ func (t *tScreen) parseXtermMouse(buf *bytes.Buffer, evs *[]Event) (bool, bool) 
 			state++
 		case 5:
 			y = int(b[i]) - 32 - 1
+			raw := cloneBuf(buf, i+1)
 			for i >= 0 {
 				_, _ = buf.ReadByte()
 				i--
 			}
-			*evs = append(*evs, t.buildMouseEvent(x, y, btn))
+			*evs = append(*evs, t.buildMouseEvent(x, y, btn, raw))
 			return true, true
 		}
 	}
 	return true, false
+}
+
+func cloneBuf(buf *bytes.Buffer, size int) []byte {
+	ret := make([]byte, size)
+	copy(ret, buf.Bytes())
+	return ret
 }
 
 func (t *tScreen) parseFunctionKey(buf *bytes.Buffer, evs *[]Event) (bool, bool) {
@@ -1469,7 +1477,7 @@ func (t *tScreen) parseFunctionKey(buf *bytes.Buffer, evs *[]Event) (bool, bool)
 			case keyPasteEnd:
 				*evs = append(*evs, NewEventPaste(false))
 			default:
-				*evs = append(*evs, NewEventKey(k.key, r, mod))
+				*evs = append(*evs, NewEventKey(k.key, r, mod, cloneBuf(buf, len(esc))))
 			}
 			for i := 0; i < len(esc); i++ {
 				_, _ = buf.ReadByte()
@@ -1492,8 +1500,8 @@ func (t *tScreen) parseRune(buf *bytes.Buffer, evs *[]Event) (bool, bool) {
 			mod = ModAlt
 			t.escaped = false
 		}
-		*evs = append(*evs, NewEventKey(KeyRune, rune(b[0]), mod))
-		_, _ = buf.ReadByte()
+		by, _ := buf.ReadByte()
+		*evs = append(*evs, NewEventKey(KeyRune, rune(b[0]), mod, []byte{by}))
 		return true, true
 	}
 
@@ -1517,7 +1525,7 @@ func (t *tScreen) parseRune(buf *bytes.Buffer, evs *[]Event) (bool, bool) {
 					mod = ModAlt
 					t.escaped = false
 				}
-				*evs = append(*evs, NewEventKey(KeyRune, r, mod))
+				*evs = append(*evs, NewEventKey(KeyRune, r, mod, cloneBuf(buf, nIn)))
 			}
 			for nIn > 0 {
 				_, _ = buf.ReadByte()
@@ -1588,13 +1596,13 @@ func (t *tScreen) collectEventsFromInput(buf *bytes.Buffer, expire bool) []Event
 
 		if partials == 0 || expire {
 			if b[0] == '\x1b' {
+				by, _ := buf.ReadByte()
 				if len(b) == 1 {
-					res = append(res, NewEventKey(KeyEsc, 0, ModNone))
+					res = append(res, NewEventKey(KeyEsc, 0, ModNone, []byte{by}))
 					t.escaped = false
 				} else {
 					t.escaped = true
 				}
-				_, _ = buf.ReadByte()
 				continue
 			}
 			// Nothing was going to match, or we timed out
@@ -1607,7 +1615,7 @@ func (t *tScreen) collectEventsFromInput(buf *bytes.Buffer, expire bool) []Event
 				t.escaped = false
 				mod = ModAlt
 			}
-			res = append(res, NewEventKey(KeyRune, rune(by), mod))
+			res = append(res, NewEventKey(KeyRune, rune(by), mod, []byte{by}))
 			continue
 		}
 
