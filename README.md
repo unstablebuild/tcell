@@ -17,7 +17,7 @@ It was inspired by _termbox_, but includes many additional improvements.
 Please see [here](UKRAINE.md) for an important message for the people of Russia.
 
 NOTE: This is version 2 of _Tcell_.  There are breaking changes relative to version 1.
-Version 1.x remains available using the import `github.com/gdamore/tcell`.
+Version 1.x remains available using the import `github.com/ernestrc/tcell`.
 
 ## Tutorial
 
@@ -133,7 +133,7 @@ fired up with cmd.exe or PowerShell works fine however.)
 ## _Termbox_ Compatibility
 
 A compatibility layer for _termbox_ is provided in the `compat` directory.
-To use it, try importing `github.com/gdamore/tcell/termbox` instead.
+To use it, try importing `github.com/ernestrc/tcell/termbox` instead.
 Most _termbox-go_ programs will probably work without further modification.
 
 ## Working With Unicode
