@@ -40,6 +40,7 @@ type EventMouse struct {
 	mod ModMask
 	x   int
 	y   int
+	raw []byte
 }
 
 // When returns the time when this EventMouse was created.
@@ -64,10 +65,15 @@ func (ev *EventMouse) Position() (int, int) {
 	return ev.x, ev.y
 }
 
+// Raw returns the raw byte sequence that produced this mouse event.
+func (ev *EventMouse) Raw() []byte {
+	return ev.raw
+}
+
 // NewEventMouse is used to create a new mouse event.  Applications
 // shouldn't need to use this; its mostly for screen implementors.
-func NewEventMouse(x, y int, btn ButtonMask, mod ModMask) *EventMouse {
-	return &EventMouse{t: time.Now(), x: x, y: y, btn: btn, mod: mod}
+func NewEventMouse(x, y int, btn ButtonMask, mod ModMask, raw []byte) *EventMouse {
+	return &EventMouse{t: time.Now(), x: x, y: y, btn: btn, mod: mod, raw: raw}
 }
 
 // ButtonMask is a mask of mouse buttons and wheel events.  Mouse button presses
