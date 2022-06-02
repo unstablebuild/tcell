@@ -219,6 +219,7 @@ type Event struct {
 	MouseX int
 	MouseY int
 	N      int
+	Raw    []byte
 }
 
 // Event types.
@@ -328,6 +329,34 @@ func makeEvent(tev tcell.Event) Event {
 	case *tcell.EventResize:
 		w, h := tev.Size()
 		return Event{Type: EventResize, Width: w, Height: h}
+	case *tcell.EventMouse:
+		x, y := tev.Position()
+		var mod Modifier
+		var key Key
+		if tev.Modifiers()&tcell.ModAlt != 0 {
+			mod = ModAlt
+		}
+		buttons := tev.Buttons()
+		if buttons&tcell.ButtonPrimary != 0 {
+			key = MouseLeft
+		} else if buttons&tcell.ButtonSecondary != 0 {
+			key = MouseRight
+		} else if buttons&tcell.ButtonMiddle != 0 {
+			key = MouseMiddle
+		} else if buttons&tcell.WheelUp != 0 {
+			key = MouseWheelUp
+		} else if buttons&tcell.WheelDown != 0 {
+			key = MouseWheelDown
+		}
+		return Event{
+			Type:   EventMouse,
+			MouseX: x,
+			MouseY: y,
+			Mod:    mod,
+			Key:    key,
+			Raw:    tev.Raw(),
+			N:      len(tev.Raw()),
+		}
 	case *tcell.EventKey:
 		k := tev.Key()
 		ch := rune(0)
@@ -345,6 +374,8 @@ func makeEvent(tev tcell.Event) Event {
 			Key:  Key(k),
 			Ch:   ch,
 			Mod:  Modifier(mod),
+			N:    len(tev.Raw()),
+			Raw:  tev.Raw(),
 		}
 	default:
 		return Event{Type: EventNone}
