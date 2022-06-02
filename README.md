@@ -11,15 +11,15 @@ Please see [here](UKRAINE.md) for an important message for the people of Russia.
 _Tcell_ is a _Go_ package that provides a cell based view for text terminals, like _XTerm_.
 It was inspired by _termbox_, but includes many additional improvements.
 
-[![Linux](https://img.shields.io/github/workflow/status/gdamore/tcell/linux?logoColor=grey&logo=linux&label=)](https://github.com/gdamore/tcell/actions/workflows/linux.yml)
-[![Windows](https://img.shields.io/github/workflow/status/gdamore/tcell/windows?logoColor=grey&logo=windows&label=)](https://github.com/gdamore/tcell/actions/workflows/windows.yml)
-[![Apache License](https://img.shields.io/github/license/gdamore/tcell.svg?logoColor=silver&logo=opensourceinitiative&color=blue&label=)](https://github.com/gdamore/tcell/blob/master/LICENSE)
-[![Docs](https://img.shields.io/badge/godoc-reference-blue.svg?label=&logo=go)](https://pkg.go.dev/github.com/gdamore/tcell/v2)
+[![Linux](https://img.shields.io/github/workflow/status/ernestrc/tcell/linux?logoColor=grey&logo=linux&label=)](https://github.com/ernestrc/tcell/actions/workflows/linux.yml)
+[![Windows](https://img.shields.io/github/workflow/status/ernestrc/tcell/windows?logoColor=grey&logo=windows&label=)](https://github.com/ernestrc/tcell/actions/workflows/windows.yml)
+[![Apache License](https://img.shields.io/github/license/ernestrc/tcell.svg?logoColor=silver&logo=opensourceinitiative&color=blue&label=)](https://github.com/ernestrc/tcell/blob/master/LICENSE)
+[![Docs](https://img.shields.io/badge/godoc-reference-blue.svg?label=&logo=go)](https://pkg.go.dev/github.com/ernestrc/tcell/v2)
 [![Discord](https://img.shields.io/discord/639503822733180969?label=&logo=discord)](https://discord.gg/urTTxDN)
-[![Coverage](https://img.shields.io/codecov/c/github/gdamore/tcell?logoColor=grey&logo=codecov&label=)](https://codecov.io/gh/gdamore/tcell)
+[![Coverage](https://img.shields.io/codecov/c/github/ernestrc/tcell?logoColor=grey&logo=codecov&label=)](https://codecov.io/gh/ernestrc/tcell)
 
 NOTE: This is version 2 of _Tcell_.  There are breaking changes relative to version 1.
-Version 1.x remains available using the import `github.com/gdamore/tcell`.
+Version 1.x remains available using the import `github.com/ernestrc/tcell`.
 
 ## Tutorial
 
@@ -135,7 +135,7 @@ fired up with cmd.exe or PowerShell works fine however.)
 ## _Termbox_ Compatibility
 
 A compatibility layer for _termbox_ is provided in the `compat` directory.
-To use it, try importing `github.com/gdamore/tcell/termbox` instead.
+To use it, try importing `github.com/ernestrc/tcell/termbox` instead.
 Most _termbox-go_ programs will probably work without further modification.
 
 ## Working With Unicode
