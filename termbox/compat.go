@@ -368,12 +368,16 @@ func makeEvent(tev tcell.Event) Event {
 				k = tcell.Key(0)
 			}
 		}
-		mod := tev.Modifiers()
+		var mod Modifier
+		if tev.Modifiers()&tcell.ModAlt != 0 {
+			mod = ModAlt
+		}
+
 		return Event{
 			Type: EventKey,
 			Key:  Key(k),
 			Ch:   ch,
-			Mod:  Modifier(mod),
+			Mod:  mod,
 			N:    len(tev.Raw()),
 			Raw:  tev.Raw(),
 		}
