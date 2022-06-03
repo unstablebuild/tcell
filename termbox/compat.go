@@ -152,7 +152,14 @@ const (
 
 // SetInputMode does not do anything in this version.
 func SetInputMode(mode InputMode) InputMode {
-	// We don't do anything else right now
+	if mode == InputCurrent {
+		return InputEsc
+	}
+	if mode&InputMouse != 0 {
+		screen.EnableMouse()
+	} else {
+		screen.DisableMouse()
+	}
 	return InputEsc
 }
 
