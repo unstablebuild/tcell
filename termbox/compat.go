@@ -110,8 +110,13 @@ func fixColor(c tcell.Color) tcell.Color {
 func mkStyle(fg, bg Attribute) tcell.Style {
 	st := tcell.StyleDefault
 
-	f := tcell.PaletteColor(int(fg)&0x1ff - 1)
-	b := tcell.PaletteColor(int(bg)&0x1ff - 1)
+	// remove attrs
+	fColor := (fg >> 9) << 9
+	bColor := (bg >> 9) << 9
+
+	var f, b tcell.Color
+	f = tcell.PaletteColor(int(fColor)&0x1ff - 1)
+	b = tcell.PaletteColor(int(bColor)&0x1ff - 1)
 
 	f = fixColor(f)
 	b = fixColor(b)
