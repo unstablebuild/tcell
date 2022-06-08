@@ -187,7 +187,7 @@ const (
 
 // SetOutputMode is used to set the color palette used.
 func SetOutputMode(mode OutputMode) OutputMode {
-	if screen.Colors() < 256 {
+	if screen == nil || screen.Colors() < 256 {
 		mode = OutputNormal
 	}
 	switch mode {
