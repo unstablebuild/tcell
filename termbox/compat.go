@@ -100,7 +100,7 @@ func fixColor(c tcell.Color) tcell.Color {
 	case Output216:
 		c = tcell.PaletteColor(int(c)%216 + 16)
 	case OutputGrayscale:
-		c %= tcell.PaletteColor(int(c)%24 + 232)
+		c = tcell.PaletteColor(int(c)%24 + 232)
 	default:
 		c = tcell.ColorDefault
 	}
