@@ -338,6 +338,11 @@ const (
 	ModAlt = Modifier(tcell.ModAlt)
 )
 
+var (
+	// provide MouseRelease compat
+	prevKey Key
+)
+
 func makeEvent(tev tcell.Event) Event {
 	switch tev := tev.(type) {
 	case *tcell.EventInterrupt:
@@ -363,7 +368,12 @@ func makeEvent(tev tcell.Event) Event {
 			key = MouseWheelUp
 		} else if buttons&tcell.WheelDown != 0 {
 			key = MouseWheelDown
+		} else if prevKey == MouseLeft ||
+			prevKey == MouseRight ||
+			prevKey == MouseMiddle {
+			key = MouseRelease
 		}
+		prevKey = key
 		return Event{
 			Type:   EventMouse,
 			MouseX: x,
