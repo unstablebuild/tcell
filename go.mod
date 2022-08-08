@@ -1,6 +1,6 @@
 module github.com/ernestrc/tcell/v2
 
-go 1.12
+go 1.18
 
 require (
 	github.com/gdamore/encoding v1.0.0
