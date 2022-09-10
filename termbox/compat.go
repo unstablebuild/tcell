@@ -151,13 +151,14 @@ func Clear(fg, bg Attribute) {
 // InputMode is not used.
 type InputMode int
 
-// Unused input modes; here for compatibility.
+// Input mode. See SetInputMode function.
 const (
-	InputCurrent InputMode = iota
-	InputEsc
+	InputEsc InputMode = 1 << iota
 	InputAlt
 	InputMouse
+	InputCurrent InputMode = 0
 )
+
 
 // SetInputMode does not do anything in this version.
 func SetInputMode(mode InputMode) InputMode {
