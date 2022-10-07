@@ -159,7 +159,6 @@ const (
 	InputCurrent InputMode = 0
 )
 
-
 // SetInputMode does not do anything in this version.
 func SetInputMode(mode InputMode) InputMode {
 	if mode == InputCurrent {
@@ -344,7 +343,8 @@ var (
 	prevKey Key
 )
 
-func makeEvent(tev tcell.Event) Event {
+// NewEvent makes a new event from a tcell.Event.
+func NewEvent(tev tcell.Event) Event {
 	switch tev := tev.(type) {
 	case *tcell.EventInterrupt:
 		if tev.Data() == EventNone {
@@ -433,7 +433,7 @@ func PollRawEvent(data []byte) Event {
 // PollEvent blocks until an event is ready, and then returns it.
 func PollEvent() Event {
 	ev := screen.PollEvent()
-	return makeEvent(ev)
+	return NewEvent(ev)
 }
 
 // Interrupt posts an interrupt event.
@@ -475,6 +475,11 @@ func PublishEvent(ev Event) bool {
 // at once, to minimize screen redraws.
 func HasPendingEvent() bool {
 	return screen.HasPendingEvent()
+}
+
+// Screen exposes the underlying tcell.Screen.
+func Screen() tcell.Screen {
+	return screen
 }
 
 // Cell represents a single character cell on screen.
