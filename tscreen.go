@@ -1102,6 +1102,10 @@ func (t *tScreen) ChannelEvents(ch chan<- Event, quit <-chan struct{}) {
 	}
 }
 
+func (t *tScreen) Poll() <-chan Event {
+	return t.evch
+}
+
 func (t *tScreen) PollEvent() Event {
 	select {
 	case <-t.quit:

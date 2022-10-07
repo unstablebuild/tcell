@@ -395,6 +395,10 @@ func (s *cScreen) PollEvent() Event {
 	}
 }
 
+func (s *cScreen) Poll() <-chan Event {
+	return s.evch
+}
+
 func (s *cScreen) HasPendingEvent() bool {
 	return len(s.evch) > 0
 }
