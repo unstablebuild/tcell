@@ -343,6 +343,10 @@ func (s *simscreen) PollEvent() Event {
 	}
 }
 
+func (s *simscreen) Poll() <-chan Event {
+	return s.evch
+}
+
 func (s *simscreen) HasPendingEvent() bool {
 	return len(s.evch) > 0
 }

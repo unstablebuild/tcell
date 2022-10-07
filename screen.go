@@ -97,6 +97,9 @@ type Screen interface {
 	// NOTE: PollEvent should not be called while this method is running.
 	ChannelEvents(ch chan<- Event, quit <-chan struct{})
 
+	// Poll returns the underlying event channel.
+	Poll() <-chan Event
+
 	// PollEvent waits for events to arrive.  Main application loops
 	// must spin on this to prevent the application from stalling.
 	// Furthermore, this will return nil if the Screen is finalized.
