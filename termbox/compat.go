@@ -347,6 +347,9 @@ var (
 func makeEvent(tev tcell.Event) Event {
 	switch tev := tev.(type) {
 	case *tcell.EventInterrupt:
+		if tev.Data() == EventNone {
+			return Event{Type: EventNone}
+		}
 		return Event{Type: EventInterrupt}
 	case *tcell.EventResize:
 		w, h := tev.Size()
@@ -384,6 +387,8 @@ func makeEvent(tev tcell.Event) Event {
 			Raw:    tev.Raw(),
 			N:      len(tev.Raw()),
 		}
+	// TODO
+	// case *tcell.EventPaste:
 	case *tcell.EventKey:
 		k := tev.Key()
 		ch := rune(0)
@@ -434,6 +439,42 @@ func PollEvent() Event {
 // Interrupt posts an interrupt event.
 func Interrupt() {
 	screen.PostEvent(tcell.NewEventInterrupt(nil))
+}
+
+// PublishEvent tries to publish an event into the event stream.
+// This can fail if the event queue is full in which case false
+// is returned. It doesn't support EventMouse and EventRaw events.
+func PublishEvent(ev Event) bool {
+	var tev tcell.Event
+	switch ev.Type {
+	case EventNone:
+		tev = tcell.NewEventInterrupt(EventNone)
+	case EventKey:
+		var mod tcell.ModMask
+		if ev.Mod&ModAlt != 0 {
+			mod = tcell.ModAlt
+		}
+		tev = tcell.NewEventKey(tcell.Key(ev.Key), ev.Ch, mod, ev.Raw)
+	case EventResize:
+		tev = tcell.NewEventResize(ev.Width, ev.Height)
+	case EventInterrupt:
+		tev = tcell.NewEventInterrupt(nil)
+	case EventError:
+		tev = tcell.NewEventError(ev.Err)
+	default /* + EventRaw + EventMouse */ :
+		return false
+	}
+	err := screen.PostEvent(tev)
+	return err != tcell.ErrEventQFull
+}
+
+// HasPendingEvent returns true if PollEvent would return an event
+// without blocking.  If the screen is stopped and PollEvent would
+// return nil, then the return value from this function is unspecified.
+// The purpose of this function is to allow multiple events to be collected
+// at once, to minimize screen redraws.
+func HasPendingEvent() bool {
+	return screen.HasPendingEvent()
 }
 
 // Cell represents a single character cell on screen.
