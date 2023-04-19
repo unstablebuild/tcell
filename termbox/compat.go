@@ -454,7 +454,11 @@ func PublishEvent(ev Event) bool {
 		if ev.Mod&ModAlt != 0 {
 			mod = tcell.ModAlt
 		}
-		tev = tcell.NewEventKey(tcell.Key(ev.Key), ev.Ch, mod, ev.Raw)
+		k := tcell.Key(ev.Key)
+		if ev.Ch != 0 {
+			k = tcell.KeyRune
+		}
+		tev = tcell.NewEventKey(k, ev.Ch, mod, ev.Raw)
 	case EventResize:
 		tev = tcell.NewEventResize(ev.Width, ev.Height)
 	case EventInterrupt:
@@ -462,7 +466,8 @@ func PublishEvent(ev Event) bool {
 	case EventError:
 		tev = tcell.NewEventError(ev.Err)
 	default /* + EventRaw + EventMouse */ :
-		return false
+		// silently ignore for unsupported events
+		return true
 	}
 	err := screen.PostEvent(tev)
 	return err != tcell.ErrEventQFull
