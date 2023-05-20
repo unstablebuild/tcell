@@ -1191,7 +1191,10 @@ func (t *tScreen) buildAcsMap() {
 }
 
 func (t *tScreen) PostEventWait(ev Event) {
-	t.evch <- ev
+	select {
+	case t.evch <- ev:
+	case <-t.quit:
+	}
 }
 
 func (t *tScreen) PostEvent(ev Event) error {
