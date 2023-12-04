@@ -6,13 +6,13 @@ _Tcell_ is a _Go_ package that provides a cell based view for text terminals, li
 It was inspired by _termbox_, but includes many additional improvements.
 
 [![Stand With Ukraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/badges/StandWithUkraine.svg)](https://stand-with-ukraine.pp.ua)
-[![Linux](https://img.shields.io/github/actions/workflow/status/gdamore/tcell/linux.yml?branch=main&logoColor=grey&logo=linux&label=)](https://github.com/gdamore/tcell/actions/workflows/linux.yml)
-[![Windows](https://img.shields.io/github/actions/workflow/status/gdamore/tcell/windows.yml?branch=main&logoColor=grey&logo=windows&label=)](https://github.com/gdamore/tcell/actions/workflows/windows.yml)
-[![Apache License](https://img.shields.io/github/license/gdamore/tcell.svg?logoColor=silver&logo=opensourceinitiative&color=blue&label=)](https://github.com/gdamore/tcell/blob/master/LICENSE)
-[![Docs](https://img.shields.io/badge/godoc-reference-blue.svg?label=&logo=go)](https://pkg.go.dev/github.com/gdamore/tcell/v2)
+[![Linux](https://img.shields.io/github/actions/workflow/status/ernestrc/tcell/linux.yml?branch=main&logoColor=grey&logo=linux&label=)](https://github.com/ernestrc/tcell/actions/workflows/linux.yml)
+[![Windows](https://img.shields.io/github/actions/workflow/status/ernestrc/tcell/windows.yml?branch=main&logoColor=grey&logo=windows&label=)](https://github.com/ernestrc/tcell/actions/workflows/windows.yml)
+[![Apache License](https://img.shields.io/github/license/ernestrc/tcell.svg?logoColor=silver&logo=opensourceinitiative&color=blue&label=)](https://github.com/ernestrc/tcell/blob/master/LICENSE)
+[![Docs](https://img.shields.io/badge/godoc-reference-blue.svg?label=&logo=go)](https://pkg.go.dev/github.com/ernestrc/tcell/v2)
 [![Discord](https://img.shields.io/discord/639503822733180969?label=&logo=discord)](https://discord.gg/urTTxDN)
-[![Coverage](https://img.shields.io/codecov/c/github/gdamore/tcell?logoColor=grey&logo=codecov&label=)](https://codecov.io/gh/gdamore/tcell)
-[![Go Report Card](https://goreportcard.com/badge/github.com/gdamore/tcell/v2)](https://goreportcard.com/report/github.com/gdamore/tcell/v2)
+[![Coverage](https://img.shields.io/codecov/c/github/ernestrc/tcell?logoColor=grey&logo=codecov&label=)](https://codecov.io/gh/ernestrc/tcell)
+[![Go Report Card](https://goreportcard.com/badge/github.com/ernestrc/tcell/v2)](https://goreportcard.com/report/github.com/ernestrc/tcell/v2)
 
 Please see [here](UKRAINE.md) for an important message for the people of Russia.
 
@@ -25,10 +25,10 @@ A brief, and still somewhat rough, [tutorial](TUTORIAL.md) is available.
 
 ## Examples
 
-- [proxima5](https://github.com/gdamore/proxima5) - space shooter ([video](https://youtu.be/jNxKTCmY_bQ))
-- [govisor](https://github.com/gdamore/govisor) - service management UI ([screenshot](http://2.bp.blogspot.com/--OsvnfzSNow/Vf7aqMw3zXI/AAAAAAAAARo/uOMtOvw4Sbg/s1600/Screen%2BShot%2B2015-09-20%2Bat%2B9.08.41%2BAM.png))
+- [proxima5](https://github.com/ernestrc/proxima5) - space shooter ([video](https://youtu.be/jNxKTCmY_bQ))
+- [govisor](https://github.com/ernestrc/govisor) - service management UI ([screenshot](http://2.bp.blogspot.com/--OsvnfzSNow/Vf7aqMw3zXI/AAAAAAAAARo/uOMtOvw4Sbg/s1600/Screen%2BShot%2B2015-09-20%2Bat%2B9.08.41%2BAM.png))
 - mouse demo - included mouse test ([screenshot](http://2.bp.blogspot.com/-fWvW5opT0es/VhIdItdKqJI/AAAAAAAAATE/7Ojc0L1SpB0/s1600/Screen%2BShot%2B2015-10-04%2Bat%2B11.47.13%2BPM.png))
-- [gomatrix](https://github.com/gdamore/gomatrix) - converted from Termbox
+- [gomatrix](https://github.com/ernestrc/gomatrix) - converted from Termbox
 - [micro](https://github.com/zyedidia/micro/) - lightweight text editor with syntax-highlighting and themes
 - [godu](https://github.com/viktomas/godu) - utility to discover large files/folders
 - [tview](https://github.com/rivo/tview/) - rich interactive widgets

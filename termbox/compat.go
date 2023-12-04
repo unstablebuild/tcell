@@ -387,8 +387,6 @@ func NewEvent(tev tcell.Event) Event {
 			Raw:    tev.Raw(),
 			N:      len(tev.Raw()),
 		}
-	// TODO
-	// case *tcell.EventPaste:
 	case *tcell.EventKey:
 		k := tev.Key()
 		ch := rune(0)

@@ -343,6 +343,7 @@ type screenImpl interface {
 	Beep() error
 	SetSize(int, int)
 	Tty() (Tty, bool)
+    Poll() <-chan Event
 
 	// Following methods are not part of the Screen api, but are used for interaction with
 	// the common layer code.
@@ -403,6 +404,10 @@ func (b *baseScreen) GetContent(x, y int) (rune, []rune, Style, int) {
 	primary, combining, style, width = cells.GetContent(x, y)
 	b.Unlock()
 	return primary, combining, style, width
+}
+
+func (b *baseScreen) Poll() <-chan Event {
+	return b.screenImpl.Poll()
 }
 
 func (b *baseScreen) LockRegion(x, y, width, height int, lock bool) {
