@@ -1,4 +1,4 @@
-// Copyright 2022 The TCell Authors
+// Copyright 2023 The TCell Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use file except in compliance with the License.
@@ -317,11 +317,6 @@ type screenImpl interface {
 	HideCursor()
 	SetCursorStyle(CursorStyle)
 	Size() (width, height int)
-	ChannelEvents(ch chan<- Event, quit <-chan struct{})
-	PollEvent() Event
-	HasPendingEvent() bool
-	PostEvent(ev Event) error
-	PostEventWait(ev Event)
 	EnableMouse(...MouseFlags)
 	DisableMouse()
 	EnablePaste()
@@ -355,6 +350,15 @@ type screenImpl interface {
 	// GetCells returns a pointer to the underlying CellBuffer that the implementation uses.
 	// Various methods will write to these for performance, but will use the lock to do so.
 	GetCells() *CellBuffer
+
+	// StopQ is closed when the screen is shut down via Fini.  It remains open if the screen
+	// is merely suspended.
+	StopQ() <-chan struct{}
+
+	// EventQ delivers events.  Events are posted to this by the screen in response to
+	// key presses, resizes, etc.  Application code receives events from this via the
+	// Screen.PollEvent, Screen.ChannelEvents APIs.
+	EventQ() chan Event
 }
 
 type baseScreen struct {
@@ -376,13 +380,7 @@ func (b *baseScreen) Clear() {
 func (b *baseScreen) Fill(r rune, style Style) {
 	cb := b.GetCells()
 	b.Lock()
-	for i := range cb.cells {
-		c := &cb.cells[i]
-		c.currMain = r
-		c.currComb = nil
-		c.currStyle = style
-		c.width = 1
-	}
+	cb.Fill(r, style)
 	b.Unlock()
 }
 
@@ -424,4 +422,53 @@ func (b *baseScreen) LockRegion(x, y, width, height int, lock bool) {
 		}
 	}
 	b.Unlock()
+}
+
+func (b *baseScreen) ChannelEvents(ch chan<- Event, quit <-chan struct{}) {
+	defer close(ch)
+	for {
+		select {
+		case <-quit:
+			return
+		case <-b.StopQ():
+			return
+		case ev := <-b.EventQ():
+			select {
+			case <-quit:
+				return
+			case <-b.StopQ():
+				return
+			case ch <- ev:
+			}
+		}
+	}
+}
+
+func (b *baseScreen) PollEvent() Event {
+	select {
+	case <-b.StopQ():
+		return nil
+	case ev := <-b.EventQ():
+		return ev
+	}
+}
+
+func (b *baseScreen) HasPendingEvent() bool {
+	return len(b.EventQ()) > 0
+}
+
+func (b *baseScreen) PostEventWait(ev Event) {
+	select {
+	case b.EventQ() <- ev:
+	case <-b.StopQ():
+	}
+}
+
+func (b *baseScreen) PostEvent(ev Event) error {
+	select {
+	case b.EventQ() <- ev:
+		return nil
+	default:
+		return ErrEventQFull
+	}
 }

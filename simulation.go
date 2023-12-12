@@ -23,19 +23,21 @@ import (
 
 // NewSimulationScreen returns a SimulationScreen.  Note that
 // SimulationScreen is also a Screen.
-func NewSimulationScreen(charset string) (Screen, SimulationScreen) {
+func NewSimulationScreen(charset string) SimulationScreen {
 	if charset == "" {
 		charset = "UTF-8"
 	}
 	ss := &simscreen{charset: charset}
-	s := &baseScreen{screenImpl: ss}
-	return s, ss
+	ss.Screen = &baseScreen{screenImpl: ss}
+	return ss
 }
 
 // SimulationScreen represents a screen simulation.  This is intended to
 // be a superset of normal Screens, but also adds some important interfaces
 // for testing.
 type SimulationScreen interface {
+	Screen
+
 	// InjectKeyBytes injects a stream of bytes corresponding to
 	// the native encoding (see charset).  It turns true if the entire
 	// set of bytes were processed and delivered as KeyEvents, false
@@ -97,6 +99,7 @@ type simscreen struct {
 	fillstyle Style
 	fallback  map[rune]string
 
+	Screen
 	sync.Mutex
 }
 
@@ -306,7 +309,7 @@ func (s *simscreen) resize() {
 	if w != ow || h != oh {
 		s.back.Resize(w, h)
 		ev := NewEventResize(w, h)
-		s.PostEvent(ev)
+		s.postEvent(ev)
 	}
 }
 
@@ -355,23 +358,21 @@ func (s *simscreen) PostEventWait(ev Event) {
 	s.evch <- ev
 }
 
-func (s *simscreen) PostEvent(ev Event) error {
+func (s *simscreen) postEvent(ev Event) {
 	select {
 	case s.evch <- ev:
-		return nil
-	default:
-		return ErrEventQFull
+	case <-s.quit:
 	}
 }
 
 func (s *simscreen) InjectMouse(x, y int, buttons ButtonMask, mod ModMask) {
 	ev := NewEventMouse(x, y, buttons, mod, nil)
-	s.PostEvent(ev)
+	s.postEvent(ev)
 }
 
 func (s *simscreen) InjectKey(key Key, r rune, mod ModMask) {
 	ev := NewEventKey(key, r, mod, nil)
-	s.PostEvent(ev)
+	s.postEvent(ev)
 }
 
 func (s *simscreen) InjectKeyBytes(b []byte) bool {
@@ -382,7 +383,7 @@ outer:
 		if b[0] >= ' ' && b[0] <= 0x7F {
 			// printable ASCII easy to deal with -- no encodings
 			ev := NewEventKey(KeyRune, rune(b[0]), ModNone, nil)
-			s.PostEvent(ev)
+			s.postEvent(ev)
 			b = b[1:]
 			continue
 		}
@@ -394,7 +395,7 @@ outer:
 				mod = ModCtrl
 			}
 			ev := NewEventKey(Key(b[0]), 0, mod, nil)
-			s.PostEvent(ev)
+			s.postEvent(ev)
 			b = b[1:]
 			continue
 		}
@@ -408,7 +409,7 @@ outer:
 				r, _ := utf8.DecodeRune(utfb[:nout])
 				if r != utf8.RuneError {
 					ev := NewEventKey(KeyRune, r, ModNone, nil)
-					s.PostEvent(ev)
+					s.postEvent(ev)
 				}
 				b = b[nin:]
 				continue outer
@@ -526,4 +527,12 @@ func (s *simscreen) Tty() (Tty, bool) {
 
 func (s *simscreen) GetCells() *CellBuffer {
 	return &s.back
+}
+
+func (s *simscreen) EventQ() chan Event {
+	return s.evch
+}
+
+func (s *simscreen) StopQ() <-chan struct{} {
+	return s.quit
 }
