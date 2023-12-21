@@ -350,7 +350,8 @@ func NewEvent(tev tcell.Event) Event {
 		if tev.Data() == EventNone {
 			return Event{Type: EventNone}
 		}
-		return Event{Type: EventInterrupt}
+		data, _ := tev.Data().([]byte)
+		return Event{Type: EventInterrupt, Raw: data}
 	case *tcell.EventResize:
 		w, h := tev.Size()
 		return Event{Type: EventResize, Width: w, Height: h}
@@ -460,7 +461,7 @@ func PublishEvent(ev Event) bool {
 	case EventResize:
 		tev = tcell.NewEventResize(ev.Width, ev.Height)
 	case EventInterrupt:
-		tev = tcell.NewEventInterrupt(nil)
+		tev = tcell.NewEventInterrupt(ev.Raw)
 	case EventError:
 		tev = tcell.NewEventError(ev.Err)
 	default /* + EventRaw + EventMouse */ :
