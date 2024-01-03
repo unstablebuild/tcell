@@ -107,7 +107,7 @@ func fixColor(c tcell.Color) tcell.Color {
 	return c
 }
 
-func mkStyle(fg, bg Attribute) tcell.Style {
+func AttributeToStyle(fg, bg Attribute) tcell.Style {
 	st := tcell.StyleDefault
 
 	var f, b tcell.Color
@@ -139,7 +139,7 @@ func mkStyle(fg, bg Attribute) tcell.Style {
 
 // Clear clears the screen with the given attributes.
 func Clear(fg, bg Attribute) {
-	st := mkStyle(fg, bg)
+	st := AttributeToStyle(fg, bg)
 	w, h := screen.Size()
 	for row := 0; row < h; row++ {
 		for col := 0; col < w; col++ {
@@ -210,7 +210,7 @@ func Sync() error {
 // SetCell sets the character cell at a given location to the given
 // content (rune) and attributes.
 func SetCell(x, y int, ch rune, fg, bg Attribute) {
-	st := mkStyle(fg, bg)
+	st := AttributeToStyle(fg, bg)
 	screen.SetContent(x, y, ch, nil, st)
 }
 
