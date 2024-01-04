@@ -143,7 +143,7 @@ func Clear(fg, bg Attribute) {
 	w, h := screen.Size()
 	for row := 0; row < h; row++ {
 		for col := 0; col < w; col++ {
-			screen.SetContent(col, row, ' ', nil, st)
+			screen.SetContent(col, row, ' ', nil, 1, st)
 		}
 	}
 }
@@ -205,13 +205,6 @@ func SetOutputMode(mode OutputMode) OutputMode {
 func Sync() error {
 	screen.Sync()
 	return nil
-}
-
-// SetCell sets the character cell at a given location to the given
-// content (rune) and attributes.
-func SetCell(x, y int, ch rune, fg, bg Attribute) {
-	st := AttributeToStyle(fg, bg)
-	screen.SetContent(x, y, ch, nil, st)
 }
 
 // EventType represents the type of event.

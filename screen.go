@@ -35,10 +35,6 @@ type Screen interface {
 	// is called (or Sync).
 	Fill(rune, Style)
 
-	// SetCell is an older API, and will be removed.  Please use
-	// SetContent instead; SetCell is implemented in terms of SetContent.
-	SetCell(x int, y int, style Style, ch ...rune)
-
 	// GetContent returns the contents at the given location.  If the
 	// coordinates are out of range, then the values will be 0, nil,
 	// StyleDefault.  Note that the contents returned are logical contents
@@ -61,7 +57,7 @@ type Screen interface {
 	// and attempts to place character at next cell to the right will have
 	// undefined effects.  Wide runes that are printed in the
 	// last column will be replaced with a single width space on output.
-	SetContent(x int, y int, primary rune, combining []rune, style Style)
+	SetContent(x int, y int, primary rune, combining []rune, width int, style Style)
 
 	// SetStyle sets the default style to use when clearing the screen
 	// or when StyleDefault is specified.  If it is also StyleDefault,
@@ -338,7 +334,7 @@ type screenImpl interface {
 	Beep() error
 	SetSize(int, int)
 	Tty() (Tty, bool)
-    Poll() <-chan Event
+	Poll() <-chan Event
 
 	// Following methods are not part of the Screen api, but are used for interaction with
 	// the common layer code.
@@ -365,14 +361,6 @@ type baseScreen struct {
 	screenImpl
 }
 
-func (b *baseScreen) SetCell(x int, y int, style Style, ch ...rune) {
-	if len(ch) > 0 {
-		b.SetContent(x, y, ch[0], ch[1:], style)
-	} else {
-		b.SetContent(x, y, ' ', nil, style)
-	}
-}
-
 func (b *baseScreen) Clear() {
 	b.Fill(' ', StyleDefault)
 }
@@ -384,11 +372,10 @@ func (b *baseScreen) Fill(r rune, style Style) {
 	b.Unlock()
 }
 
-func (b *baseScreen) SetContent(x, y int, mainc rune, combc []rune, st Style) {
-
+func (b *baseScreen) SetContent(x, y int, mainc rune, combc []rune, width int, st Style) {
 	cells := b.GetCells()
 	b.Lock()
-	cells.SetContent(x, y, mainc, combc, st)
+	cells.SetContentWidth(x, y, mainc, combc, width, st)
 	b.Unlock()
 }
 

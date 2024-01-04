@@ -14,12 +14,6 @@
 
 package tcell
 
-import (
-	"os"
-
-	runewidth "github.com/mattn/go-runewidth"
-)
-
 type cell struct {
 	currMain  rune
 	currComb  []rune
@@ -43,12 +37,10 @@ type CellBuffer struct {
 	cells []cell
 }
 
-// SetContent sets the contents (primary rune, combining runes,
-// and style) for a cell at a given location.  If the background or
-// foreground of the style is set to ColorNone, then the respective
-// color is left un changed.
-func (cb *CellBuffer) SetContent(x int, y int,
-	mainc rune, combc []rune, style Style,
+// SetContentWidth behaves like SetContent, but allows clients
+// to pass the grapheme width if known.
+func (cb *CellBuffer) SetContentWidth(x int, y int,
+	mainc rune, combc []rune, width int, style Style,
 ) {
 	if x >= 0 && y >= 0 && x < cb.w && y < cb.h {
 		c := &cb.cells[(y*cb.w)+x]
@@ -57,11 +49,11 @@ func (cb *CellBuffer) SetContent(x int, y int,
 			cb.SetDirty(x+i, y, true)
 		}
 
-		c.currComb = append([]rune{}, combc...)
+		// NOTE: behaviour is diff from above:
+		// combc should not be re-used to save an allocation.
+		c.currComb = combc
 
-		if c.currMain != mainc {
-			c.width = runewidth.RuneWidth(mainc)
-		}
+		c.width = width
 		c.currMain = mainc
 		if style.fg == ColorNone {
 			style.fg = c.currStyle.fg
@@ -227,23 +219,5 @@ func (cb *CellBuffer) Fill(r rune, style Style) {
 		}
 		c.currStyle = cs
 		c.width = 1
-	}
-}
-
-var runeConfig *runewidth.Condition
-
-func init() {
-	// The defaults for the runewidth package are poorly chosen for terminal
-	// applications.  We however will honor the setting in the environment if
-	// it is set.
-	if os.Getenv("RUNEWIDTH_EASTASIAN") == "" {
-		runewidth.DefaultCondition.EastAsianWidth = false
-	}
-
-	// For performance reasons, we create a lookup table.  However, some users
-	// might be more memory conscious.  If that's you, set the TCELL_MINIMIZE
-	// environment variable.
-	if os.Getenv("TCELL_MINIMIZE") == "" {
-		runewidth.CreateLUT()
 	}
 }
