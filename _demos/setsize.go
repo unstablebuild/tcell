@@ -36,7 +36,7 @@ func emitStr(s tcell.Screen, x, y int, style tcell.Style, str string) {
 			c = ' '
 			w = 1
 		}
-		s.SetContent(x, y, c, comb, style)
+		s.SetContent(x, y, c, comb, w, style)
 		x += w
 	}
 }

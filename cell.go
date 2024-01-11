@@ -67,8 +67,7 @@ func (cb *CellBuffer) SetContentWidth(x int, y int,
 
 // GetContent returns the contents of a character cell, including the
 // primary rune, any combining character runes (which will usually be
-// nil), the style, and the display width in cells.  (The width can be
-// either 1, normally, or 2 for East Asian full-width characters.)
+// nil), the style, and the display width in cells.
 func (cb *CellBuffer) GetContent(x, y int) (rune, []rune, Style, int) {
 	var mainc rune
 	var combc []rune

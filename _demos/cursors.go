@@ -42,10 +42,10 @@ func main() {
 	text := "This demonstrates cursor styles.  Press 0 through 6 to change the style."
 	x := 1
 	for _, r := range text {
-		s.SetCell(x, 1, tcell.StyleDefault, r)
+		s.SetContent(x, 1, r, nil, 1, tcell.StyleDefault)
 		x++
 	}
-	s.SetCell(2, 2, tcell.StyleDefault, '0')
+	s.SetContent(2, 2, '0', nil, 1, tcell.StyleDefault)
 	s.SetCursorStyle(tcell.CursorStyleDefault)
 	s.ShowCursor(3, 2)
 	quit := make(chan struct{})
@@ -59,25 +59,25 @@ func main() {
 				case tcell.KeyRune:
 					switch ev.Rune() {
 					case '0':
-						s.SetContent(2, 2, '0', nil, style)
+						s.SetContent(2, 2, '0', nil, 1, style)
 						s.SetCursorStyle(tcell.CursorStyleDefault)
 					case '1':
-						s.SetContent(2, 2, '1', nil, style)
+						s.SetContent(2, 2, '1', nil, 1, style)
 						s.SetCursorStyle(tcell.CursorStyleBlinkingBlock)
 					case '2':
-						s.SetCell(2, 2, tcell.StyleDefault, '2')
+						s.SetContent(2, 2, '2', nil, 1, tcell.StyleDefault)
 						s.SetCursorStyle(tcell.CursorStyleSteadyBlock)
 					case '3':
-						s.SetCell(2, 2, tcell.StyleDefault, '3')
+						s.SetContent(2, 2, '3', nil, 1, tcell.StyleDefault)
 						s.SetCursorStyle(tcell.CursorStyleBlinkingUnderline)
 					case '4':
-						s.SetCell(2, 2, tcell.StyleDefault, '4')
+						s.SetContent(2, 2, '4', nil, 1, tcell.StyleDefault)
 						s.SetCursorStyle(tcell.CursorStyleSteadyUnderline)
 					case '5':
-						s.SetCell(2, 2, tcell.StyleDefault, '5')
+						s.SetContent(2, 2, '5', nil, 1, tcell.StyleDefault)
 						s.SetCursorStyle(tcell.CursorStyleBlinkingBar)
 					case '6':
-						s.SetCell(2, 2, tcell.StyleDefault, '6')
+						s.SetContent(2, 2, '6', nil, 1, tcell.StyleDefault)
 						s.SetCursorStyle(tcell.CursorStyleSteadyBar)
 					}
 					s.Show()

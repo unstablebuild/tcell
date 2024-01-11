@@ -43,7 +43,7 @@ func emitStr(s tcell.Screen, x, y int, style tcell.Style, str string) {
 			c = ' '
 			w = 1
 		}
-		s.SetContent(x, y, c, comb, style)
+		s.SetContent(x, y, c, comb, 1, style)
 		x += w
 	}
 }
@@ -57,23 +57,23 @@ func drawBox(s tcell.Screen, x1, y1, x2, y2 int, style tcell.Style, r rune) {
 	}
 
 	for col := x1; col <= x2; col++ {
-		s.SetContent(col, y1, tcell.RuneHLine, nil, style)
-		s.SetContent(col, y2, tcell.RuneHLine, nil, style)
+		s.SetContent(col, y1, tcell.RuneHLine, nil, 1, style)
+		s.SetContent(col, y2, tcell.RuneHLine, nil, 1, style)
 	}
 	for row := y1 + 1; row < y2; row++ {
-		s.SetContent(x1, row, tcell.RuneVLine, nil, style)
-		s.SetContent(x2, row, tcell.RuneVLine, nil, style)
+		s.SetContent(x1, row, tcell.RuneVLine, nil, 1, style)
+		s.SetContent(x2, row, tcell.RuneVLine, nil, 1, style)
 	}
 	if y1 != y2 && x1 != x2 {
 		// Only add corners if we need to
-		s.SetContent(x1, y1, tcell.RuneULCorner, nil, style)
-		s.SetContent(x2, y1, tcell.RuneURCorner, nil, style)
-		s.SetContent(x1, y2, tcell.RuneLLCorner, nil, style)
-		s.SetContent(x2, y2, tcell.RuneLRCorner, nil, style)
+		s.SetContent(x1, y1, tcell.RuneULCorner, nil, 1, style)
+		s.SetContent(x2, y1, tcell.RuneURCorner, nil, 1, style)
+		s.SetContent(x1, y2, tcell.RuneLLCorner, nil, 1, style)
+		s.SetContent(x2, y2, tcell.RuneLRCorner, nil, 1, style)
 	}
 	for row := y1 + 1; row < y2; row++ {
 		for col := x1 + 1; col < x2; col++ {
-			s.SetContent(col, row, r, nil, style)
+			s.SetContent(col, row, r, nil, 1, style)
 		}
 	}
 }
@@ -93,7 +93,7 @@ func drawSelect(s tcell.Screen, x1, y1, x2, y2 int, sel bool) {
 				style = defStyle
 			}
 			style = style.Reverse(sel)
-			s.SetContent(col, row, mainc, combc, style)
+			s.SetContent(col, row, mainc, combc, 1, style)
 			col += width - 1
 		}
 	}
@@ -188,11 +188,11 @@ func main() {
 		switch ev := ev.(type) {
 		case *tcell.EventResize:
 			s.Sync()
-			s.SetContent(w-1, h-1, 'R', nil, st)
+			s.SetContent(w-1, h-1, 'R', nil, 1, st)
 		case *tcell.EventKey:
-			s.SetContent(w-2, h-2, ev.Rune(), nil, st)
+			s.SetContent(w-2, h-2, ev.Rune(), nil, 1, st)
 			if pasting {
-				s.SetContent(w-1, h-1, 'P', nil, st)
+				s.SetContent(w-1, h-1, 'P', nil, 1, st)
 				if ev.Key() == tcell.KeyRune {
 					pstr = pstr + string(ev.Rune())
 				} else {
@@ -202,7 +202,7 @@ func main() {
 				continue
 			}
 			pstr = ""
-			s.SetContent(w-1, h-1, 'K', nil, st)
+			s.SetContent(w-1, h-1, 'K', nil, 1, st)
 			if ev.Key() == tcell.KeyEscape {
 				ecnt++
 				if ecnt > 1 {
@@ -322,12 +322,12 @@ func main() {
 				bx, by = x, y
 			}
 			lchar = ch
-			s.SetContent(w-1, h-1, 'M', nil, st)
+			s.SetContent(w-1, h-1, 'M', nil, 1, st)
 			mx, my = x, y
 		case *tcell.EventFocus:
 			focus = ev.Focused
 		default:
-			s.SetContent(w-1, h-1, 'X', nil, st)
+			s.SetContent(w-1, h-1, 'X', nil, 1, st)
 		}
 
 		if ox >= 0 && bx >= 0 {

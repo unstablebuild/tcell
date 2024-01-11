@@ -25,7 +25,7 @@ import (
 
 	"github.com/ernestrc/tcell/v2"
 	"github.com/ernestrc/tcell/v2/encoding"
-	runewidth "github.com/mattn/go-runewidth"
+	"github.com/rivo/uniseg"
 )
 
 var row = 0
@@ -39,50 +39,15 @@ func putln(s tcell.Screen, str string) {
 
 func puts(s tcell.Screen, style tcell.Style, x, y int, str string) {
 	i := 0
-	var deferred []rune
-	dwidth := 0
-	zwj := false
-	for _, r := range str {
-		if r == '\u200d' {
-			if len(deferred) == 0 {
-				deferred = append(deferred, ' ')
-				dwidth = 1
-			}
-			deferred = append(deferred, r)
-			zwj = true
-			continue
-		}
-		if zwj {
-			deferred = append(deferred, r)
-			zwj = false
-			continue
-		}
-		switch runewidth.RuneWidth(r) {
-		case 0:
-			if len(deferred) == 0 {
-				deferred = append(deferred, ' ')
-				dwidth = 1
-			}
-		case 1:
-			if len(deferred) != 0 {
-				s.SetContent(x+i, y, deferred[0], deferred[1:], style)
-				i += dwidth
-			}
-			deferred = nil
-			dwidth = 1
-		case 2:
-			if len(deferred) != 0 {
-				s.SetContent(x+i, y, deferred[0], deferred[1:], style)
-				i += dwidth
-			}
-			deferred = nil
-			dwidth = 2
-		}
-		deferred = append(deferred, r)
-	}
-	if len(deferred) != 0 {
-		s.SetContent(x+i, y, deferred[0], deferred[1:], style)
-		i += dwidth
+	state := -1
+	var cluster string
+	var boundaries int
+	for len(str) > 0 {
+		cluster, str, boundaries, state = uniseg.StepString(str, state)
+		width := boundaries >> uniseg.ShiftWidth
+		runes := []rune(cluster)
+		s.SetContent(x+i, y, runes[0], runes[1:], width, style)
+		i += width
 	}
 }
 

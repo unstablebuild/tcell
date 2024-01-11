@@ -30,13 +30,13 @@ import (
 func emitStr(s tcell.Screen, x, y int, style tcell.Style, str string) int {
 	for _, c := range str {
 		var comb []rune
-		w := runewidth.RuneWidth(c)
+		w := uniseg.StringWidth(string(c))
 		if w == 0 {
 			comb = []rune{c}
 			c = ' '
 			w = 1
 		}
-		s.SetContent(x, y, c, comb, style)
+		s.SetContent(x, y, c, comb, width, style)
 		x += w
 	}
 	return x

@@ -55,7 +55,7 @@ func makebox(s tcell.Screen) {
 
 	for row := 0; row < lh; row++ {
 		for col := 0; col < lw; col++ {
-			s.SetCell(lx+col, ly+row, st, gl)
+			s.SetContent(lx+col, ly+row, gl, nil, 1, st)
 		}
 	}
 	s.Show()
