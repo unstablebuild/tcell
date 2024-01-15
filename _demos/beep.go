@@ -51,11 +51,7 @@ func main() {
 				case tcell.KeyEscape, tcell.KeyEnter, tcell.KeyCtrlC:
 					close(quit)
 					return
-				case tcell.KeyCtrlL:
-					s.Sync()
 				}
-			case *tcell.EventResize:
-				s.Sync()
 			}
 		}
 	}()

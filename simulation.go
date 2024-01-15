@@ -15,7 +15,6 @@
 package tcell
 
 import (
-	"sync"
 	"unicode/utf8"
 
 	"golang.org/x/text/transform"
@@ -60,6 +59,8 @@ type SimulationScreen interface {
 
 	// GetCursor returns the cursor details.
 	GetCursor() (x int, y int, visible bool)
+
+	SetSize(int, int)
 }
 
 // SimCell represents a simulated screen cell.  The purpose of this
@@ -77,6 +78,7 @@ type SimCell struct {
 }
 
 type simscreen struct {
+	dirty bool
 	physw int
 	physh int
 	fini  bool
@@ -86,7 +88,6 @@ type simscreen struct {
 
 	front     []SimCell
 	back      CellBuffer
-	clear     bool
 	cursorx   int
 	cursory   int
 	cursorvis bool
@@ -100,7 +101,6 @@ type simscreen struct {
 	fallback  map[rune]string
 
 	Screen
-	sync.Mutex
 }
 
 func (s *simscreen) Init() error {
@@ -134,10 +134,8 @@ func (s *simscreen) Init() error {
 }
 
 func (s *simscreen) Fini() {
-	s.Lock()
 	s.fini = true
 	s.back.Resize(0, 0)
-	s.Unlock()
 	if s.quit != nil {
 		close(s.quit)
 	}
@@ -147,9 +145,7 @@ func (s *simscreen) Fini() {
 }
 
 func (s *simscreen) SetStyle(style Style) {
-	s.Lock()
 	s.style = style
-	s.Unlock()
 }
 
 func (s *simscreen) drawCell(x, y int) int {
@@ -214,10 +210,8 @@ func (s *simscreen) drawCell(x, y int) int {
 }
 
 func (s *simscreen) ShowCursor(x, y int) {
-	s.Lock()
 	s.cursorx, s.cursory = x, y
 	s.showCursor()
-	s.Unlock()
 }
 
 func (s *simscreen) HideCursor() {
@@ -242,10 +236,10 @@ func (s *simscreen) hideCursor() {
 func (s *simscreen) SetCursorStyle(CursorStyle) {}
 
 func (s *simscreen) Show() {
-	s.Lock()
-	s.resize()
+	if s.dirty {
+		s.resize()
+	}
 	s.draw()
-	s.Unlock()
 }
 
 func (s *simscreen) clearScreen() {
@@ -255,20 +249,18 @@ func (s *simscreen) clearScreen() {
 		s.front[i].Runes = []rune{s.fillchar}
 		s.front[i].Bytes = []byte{byte(s.fillchar)}
 	}
-	s.clear = false
 }
 
 func (s *simscreen) draw() {
 	s.hideCursor()
-	if s.clear {
-		s.clearScreen()
-	}
 
 	w, h := s.back.Size()
 	for y := 0; y < h; y++ {
 		for x := 0; x < w; x++ {
 			width := s.drawCell(x, y)
-			x += width - 1
+			if width > 1 {
+				x += width - 1
+			}
 		}
 	}
 	s.showCursor()
@@ -297,9 +289,7 @@ func (s *simscreen) DisableFocus() {
 }
 
 func (s *simscreen) Size() (int, int) {
-	s.Lock()
 	w, h := s.back.Size()
-	s.Unlock()
 	return w, h
 }
 
@@ -308,9 +298,9 @@ func (s *simscreen) resize() {
 	ow, oh := s.back.Size()
 	if w != ow || h != oh {
 		s.back.Resize(w, h)
-		ev := NewEventResize(w, h)
-		s.postEvent(ev)
+		s.back.Invalidate()
 	}
+	s.dirty = false
 }
 
 func (s *simscreen) Colors() int {
@@ -423,21 +413,11 @@ outer:
 	return !failed
 }
 
-func (s *simscreen) Sync() {
-	s.Lock()
-	s.clear = true
-	s.resize()
-	s.back.Invalidate()
-	s.draw()
-	s.Unlock()
-}
-
 func (s *simscreen) CharacterSet() string {
 	return s.charset
 }
 
 func (s *simscreen) SetSize(w, h int) {
-	s.Lock()
 	newc := make([]SimCell, w*h)
 	for row := 0; row < h && row < s.physh; row++ {
 		for col := 0; col < w && col < s.physw; col++ {
@@ -448,33 +428,25 @@ func (s *simscreen) SetSize(w, h int) {
 	s.physw, s.physh = w, h
 	s.front = newc
 	s.back.Resize(w, h)
-	s.Unlock()
+	s.dirty = true
 }
 
 func (s *simscreen) GetContents() ([]SimCell, int, int) {
-	s.Lock()
 	cells, w, h := s.front, s.physw, s.physh
-	s.Unlock()
 	return cells, w, h
 }
 
 func (s *simscreen) GetCursor() (int, int, bool) {
-	s.Lock()
 	x, y, vis := s.cursorx, s.cursory, s.cursorvis
-	s.Unlock()
 	return x, y, vis
 }
 
 func (s *simscreen) RegisterRuneFallback(r rune, subst string) {
-	s.Lock()
 	s.fallback[r] = subst
-	s.Unlock()
 }
 
 func (s *simscreen) UnregisterRuneFallback(r rune) {
-	s.Lock()
 	delete(s.fallback, r)
-	s.Unlock()
 }
 
 func (s *simscreen) CanDisplay(r rune, checkFallbacks bool) bool {

@@ -74,7 +74,6 @@ func main() {
 	for {
 		switch ev := s.PollEvent().(type) {
 		case *tcell.EventResize:
-			s.Sync()
 			displayHelloWorld(s)
 		case *tcell.EventKey:
 			if ev.Key() == tcell.KeyEscape {
