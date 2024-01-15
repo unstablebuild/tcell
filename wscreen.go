@@ -397,15 +397,6 @@ func (t *wScreen) unset(this js.Value, args []js.Value) interface{} {
 	return nil
 }
 
-func (t *wScreen) Sync() {
-	t.Lock()
-	t.resize()
-	t.clear = true
-	t.cells.Invalidate()
-	t.draw()
-	t.Unlock()
-}
-
 func (t *wScreen) CharacterSet() string {
 	return "UTF-8"
 }
