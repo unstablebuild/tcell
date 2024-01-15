@@ -201,12 +201,6 @@ func SetOutputMode(mode OutputMode) OutputMode {
 	}
 }
 
-// Sync forces a resync of the screen.
-func Sync() error {
-	screen.Sync()
-	return nil
-}
-
 // EventType represents the type of event.
 type EventType uint8
 

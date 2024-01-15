@@ -423,15 +423,6 @@ outer:
 	return !failed
 }
 
-func (s *simscreen) Sync() {
-	s.Lock()
-	s.clear = true
-	s.resize()
-	s.back.Invalidate()
-	s.draw()
-	s.Unlock()
-}
-
 func (s *simscreen) CharacterSet() string {
 	return s.charset
 }

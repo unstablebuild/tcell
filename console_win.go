@@ -1020,18 +1020,6 @@ func (s *cScreen) Show() {
 	s.Unlock()
 }
 
-func (s *cScreen) Sync() {
-	s.Lock()
-	if !s.fini {
-		s.cells.Invalidate()
-		s.hideCursor()
-		s.resize()
-		s.draw()
-		s.doCursor()
-	}
-	s.Unlock()
-}
-
 type consoleInfo struct {
 	size  coord
 	pos   coord

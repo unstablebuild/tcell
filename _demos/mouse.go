@@ -187,7 +187,6 @@ func main() {
 
 		switch ev := ev.(type) {
 		case *tcell.EventResize:
-			s.Sync()
 			s.SetContent(w-1, h-1, 'R', nil, 1, st)
 		case *tcell.EventKey:
 			s.SetContent(w-2, h-2, ev.Rune(), nil, 1, st)
@@ -209,8 +208,6 @@ func main() {
 					s.Fini()
 					os.Exit(0)
 				}
-			} else if ev.Key() == tcell.KeyCtrlL {
-				s.Sync()
 			} else if ev.Key() == tcell.KeyCtrlZ {
 				// CtrlZ doesn't really suspend the process, but we use it to execute a subshell.
 				if err := s.Suspend(); err == nil {

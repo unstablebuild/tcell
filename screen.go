@@ -14,8 +14,6 @@
 
 package tcell
 
-import "sync"
-
 // Screen represents the physical (or emulated) screen.
 // This can be a terminal window or a physical console.  Platforms implement
 // this differently.
@@ -164,16 +162,6 @@ type Screen interface {
 	// manner possible.
 	Show()
 
-	// Sync works like Show(), but it updates every visible cell on the
-	// physical display, assuming that it is not synchronized with any
-	// internal model.  This may be both expensive and visually jarring,
-	// so it should only be used when believed to actually be necessary.
-	//
-	// Typically, this is called as a result of a user-requested redraw
-	// (e.g. to clear up on-screen corruption caused by some other program),
-	// or during a resize event.
-	Sync()
-
 	// CharacterSet returns information about the character set.
 	// This isn't the full locale, but it does give us the input/output
 	// character set.  Note that this is just for diagnostic purposes,
@@ -221,11 +209,6 @@ type Screen interface {
 	// one that is visually indistinguishable from the one requested.
 	CanDisplay(r rune, checkFallbacks bool) bool
 
-	// Resize does nothing, since it's generally not possible to
-	// ask a screen to resize, but it allows the Screen to implement
-	// the View interface.
-	Resize(int, int, int, int)
-
 	// HasKey returns true if the keyboard is believed to have the
 	// key.  In some cases a keyboard may have keys with this name
 	// but no support for them, while in others a key may be reported
@@ -236,30 +219,9 @@ type Screen interface {
 	// runes) is always true.
 	HasKey(Key) bool
 
-	// Suspend pauses input and output processing.  It also restores the
-	// terminal settings to what they were when the application started.
-	// This can be used to, for example, run a sub-shell.
-	Suspend() error
-
-	// Resume resumes after Suspend().
-	Resume() error
-
 	// Beep attempts to sound an OS-dependent audible alert and returns an error
 	// when unsuccessful.
 	Beep() error
-
-	// SetSize attempts to resize the window.  It also invalidates the cells and
-	// calls the resize function.  Note that if the window size is changed, it will
-	// not be restored upon application exit.
-	//
-	// Many terminals cannot support this.  Perversely, the "modern" Windows Terminal
-	// does not support application-initiated resizing, whereas the legacy terminal does.
-	// Also, some emulators can support this but may have it disabled by default.
-	SetSize(int, int)
-
-	// LockRegion sets or unsets a lock on a region of cells. A lock on a
-	// cell prevents the cell from being redrawn.
-	LockRegion(x, y, width, height int, lock bool)
 
 	// Tty returns the underlying Tty. If the screen is not a terminal, the
 	// returned bool will be false
@@ -322,26 +284,17 @@ type screenImpl interface {
 	HasMouse() bool
 	Colors() int
 	Show()
-	Sync()
 	CharacterSet() string
 	RegisterRuneFallback(r rune, subst string)
 	UnregisterRuneFallback(r rune)
 	CanDisplay(r rune, checkFallbacks bool) bool
-	Resize(int, int, int, int)
 	HasKey(Key) bool
-	Suspend() error
-	Resume() error
 	Beep() error
-	SetSize(int, int)
 	Tty() (Tty, bool)
 	Poll() <-chan Event
 
 	// Following methods are not part of the Screen api, but are used for interaction with
 	// the common layer code.
-
-	// Locker locks the underlying data structures so that we can access them
-	// in a thread-safe way.
-	sync.Locker
 
 	// GetCells returns a pointer to the underlying CellBuffer that the implementation uses.
 	// Various methods will write to these for performance, but will use the lock to do so.
@@ -367,16 +320,12 @@ func (b *baseScreen) Clear() {
 
 func (b *baseScreen) Fill(r rune, style Style) {
 	cb := b.GetCells()
-	b.Lock()
 	cb.Fill(r, style)
-	b.Unlock()
 }
 
 func (b *baseScreen) SetContent(x, y int, mainc rune, combc []rune, width int, st Style) {
 	cells := b.GetCells()
-	b.Lock()
 	cells.SetContentWidth(x, y, mainc, combc, width, st)
-	b.Unlock()
 }
 
 func (b *baseScreen) GetContent(x, y int) (rune, []rune, Style, int) {
@@ -385,30 +334,12 @@ func (b *baseScreen) GetContent(x, y int) (rune, []rune, Style, int) {
 	var style Style
 	var width int
 	cells := b.GetCells()
-	b.Lock()
 	primary, combining, style, width = cells.GetContent(x, y)
-	b.Unlock()
 	return primary, combining, style, width
 }
 
 func (b *baseScreen) Poll() <-chan Event {
 	return b.screenImpl.Poll()
-}
-
-func (b *baseScreen) LockRegion(x, y, width, height int, lock bool) {
-	cells := b.GetCells()
-	b.Lock()
-	for j := y; j < (y + height); j += 1 {
-		for i := x; i < (x + width); i += 1 {
-			switch lock {
-			case true:
-				cells.LockCell(i, j)
-			case false:
-				cells.UnlockCell(i, j)
-			}
-		}
-	}
-	b.Unlock()
 }
 
 func (b *baseScreen) ChannelEvents(ch chan<- Event, quit <-chan struct{}) {
