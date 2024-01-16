@@ -22,7 +22,6 @@ type cell struct {
 	lastStyle Style
 	lastComb  []rune
 	width     int
-	lock      bool
 }
 
 // CellBuffer represents a two-dimensional array of character cells.
@@ -69,19 +68,8 @@ func (cb *CellBuffer) SetContentWidth(x int, y int,
 // primary rune, any combining character runes (which will usually be
 // nil), the style, and the display width in cells.
 func (cb *CellBuffer) GetContent(x, y int) (rune, []rune, Style, int) {
-	var mainc rune
-	var combc []rune
-	var style Style
-	var width int
-	if x >= 0 && y >= 0 && x < cb.w && y < cb.h {
-		c := &cb.cells[(y*cb.w)+x]
-		mainc, combc, style = c.currMain, c.currComb, c.currStyle
-		if width = c.width; width == 0 || mainc < ' ' {
-			width = 1
-			mainc = ' '
-		}
-	}
-	return mainc, combc, style, width
+	c := cb.cells[(y*cb.w)+x]
+	return c.currMain, c.currComb, c.currStyle, c.width
 }
 
 // Size returns the (width, height) in cells of the buffer.
@@ -100,27 +88,22 @@ func (cb *CellBuffer) Invalidate() {
 // refreshed on the physical display.  This returns true if the cell
 // content is different since the last time it was marked clean.
 func (cb *CellBuffer) Dirty(x, y int) bool {
-	if x >= 0 && y >= 0 && x < cb.w && y < cb.h {
-		c := &cb.cells[(y*cb.w)+x]
-		if c.lock {
-			return false
-		}
-		if c.lastMain == rune(0) {
+	c := &cb.cells[(y*cb.w)+x]
+	if c.lastMain == rune(0) {
+		return true
+	}
+	if c.lastMain != c.currMain {
+		return true
+	}
+	if c.lastStyle != c.currStyle {
+		return true
+	}
+	if len(c.lastComb) != len(c.currComb) {
+		return true
+	}
+	for i := range c.lastComb {
+		if c.lastComb[i] != c.currComb[i] {
 			return true
-		}
-		if c.lastMain != c.currMain {
-			return true
-		}
-		if c.lastStyle != c.currStyle {
-			return true
-		}
-		if len(c.lastComb) != len(c.currComb) {
-			return true
-		}
-		for i := range c.lastComb {
-			if c.lastComb[i] != c.currComb[i] {
-				return true
-			}
 		}
 	}
 	return false
@@ -130,48 +113,17 @@ func (cb *CellBuffer) Dirty(x, y int) bool {
 // been displayed (in which case dirty is false), or to manually
 // force a cell to be marked dirty.
 func (cb *CellBuffer) SetDirty(x, y int, dirty bool) {
-	if x >= 0 && y >= 0 && x < cb.w && y < cb.h {
-		c := &cb.cells[(y*cb.w)+x]
-		if dirty {
-			c.lastMain = rune(0)
-		} else {
-			if c.currMain == rune(0) {
-				c.currMain = ' '
-			}
-			c.lastMain = c.currMain
-			c.lastComb = c.currComb
-			c.lastStyle = c.currStyle
+	c := &cb.cells[(y*cb.w)+x]
+	if dirty {
+		c.lastMain = rune(0)
+	} else {
+		if c.currMain == rune(0) {
+			c.currMain = ' '
 		}
+		c.lastMain = c.currMain
+		c.lastComb = c.currComb
+		c.lastStyle = c.currStyle
 	}
-}
-
-// LockCell locks a cell from being drawn, effectively marking it "clean" until
-// the lock is removed. This can be used to prevent tcell from drawing a given
-// cell, even if the underlying content has changed. For example, when drawing a
-// sixel graphic directly to a TTY screen an implementer must lock the region
-// underneath the graphic to prevent tcell from drawing on top of the graphic.
-func (cb *CellBuffer) LockCell(x, y int) {
-	if x < 0 || y < 0 {
-		return
-	}
-	if x >= cb.w || y >= cb.h {
-		return
-	}
-	c := &cb.cells[(y*cb.w)+x]
-	c.lock = true
-}
-
-// UnlockCell removes a lock from the cell and marks it as dirty
-func (cb *CellBuffer) UnlockCell(x, y int) {
-	if x < 0 || y < 0 {
-		return
-	}
-	if x >= cb.w || y >= cb.h {
-		return
-	}
-	c := &cb.cells[(y*cb.w)+x]
-	c.lock = false
-	cb.SetDirty(x, y, true)
 }
 
 // Resize is used to resize the cells array, with different dimensions,
@@ -185,7 +137,7 @@ func (cb *CellBuffer) Resize(w, h int) {
 	newc := make([]cell, w*h)
 	for y := 0; y < h && y < cb.h; y++ {
 		for x := 0; x < w && x < cb.w; x++ {
-			oc := &cb.cells[(y*cb.w)+x]
+			oc := cb.cells[(y*cb.w)+x]
 			nc := &newc[(y*w)+x]
 			nc.currMain = oc.currMain
 			nc.currComb = oc.currComb
