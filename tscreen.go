@@ -136,8 +136,6 @@ type tScreen struct {
 	finiOnce     sync.Once
 	enablePaste  string
 	disablePaste string
-	enterUrl     string
-	exitUrl      string
 	setWinSize   string
 	enableFocus  string
 	disableFocus string
@@ -326,17 +324,6 @@ func (t *tScreen) prepareExtendedOSC() {
 	// not swallow these OSC commands properly.
 	if strings.Contains(t.ti.Name, "linux") {
 		return
-	}
-	// More stuff for limits in terminfo.  This time we are applying
-	// the most common OSC (operating system commands).  Generally
-	// terminals that don't understand these will ignore them.
-	// Again, we condition this based on mouse capabilities.
-	if t.ti.EnterUrl != "" {
-		t.enterUrl = t.ti.EnterUrl
-		t.exitUrl = t.ti.ExitUrl
-	} else if t.ti.Mouse != "" {
-		t.enterUrl = "\x1b]8;%p2%s;%p1%s\x1b\\"
-		t.exitUrl = "\x1b]8;;\x1b\\"
 	}
 
 	if t.ti.SetWindowSize != "" {
@@ -710,15 +697,6 @@ func (t *tScreen) drawCell(x, y int) int {
 			t.TPuts(ti.StrikeThrough)
 		}
 
-		// URL string can be long, so don't send it unless we really need to
-		if t.enterUrl != "" && t.curstyle != style {
-			if style.url != "" {
-				t.TPuts(ti.TParm(t.enterUrl, style.url, style.urlId))
-			} else {
-				t.TPuts(t.exitUrl)
-			}
-		}
-
 		t.curstyle = style
 	}
 
@@ -809,7 +787,6 @@ func (t *tScreen) Show() {
 
 func (t *tScreen) clearScreen() {
 	t.TPuts(t.ti.AttrOff)
-	t.TPuts(t.exitUrl)
 	fg, bg, _ := t.style.Decompose()
 	_ = t.sendFgBg(fg, bg, AttrNone)
 	t.TPuts(t.ti.Clear)
