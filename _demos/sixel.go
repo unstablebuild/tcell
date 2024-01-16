@@ -27,8 +27,8 @@ import (
 	"math"
 	"os"
 
-	"github.com/ernestrc/tcell/v2"
-	"github.com/ernestrc/tcell/v2/encoding"
+	"github.com/ernestrc/tcell/v3"
+	"github.com/ernestrc/tcell/v3/encoding"
 
 	"github.com/mattn/go-runewidth"
 	"github.com/mattn/go-sixel"

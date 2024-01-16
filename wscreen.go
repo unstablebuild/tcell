@@ -19,7 +19,7 @@ package tcell
 
 import (
 	"errors"
-	"github.com/ernestrc/tcell/v2/terminfo"
+	"github.com/ernestrc/tcell/v3/terminfo"
 	"strings"
 	"sync"
 	"syscall/js"

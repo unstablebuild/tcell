@@ -19,7 +19,7 @@ package termbox
 import (
 	"errors"
 
-	"github.com/ernestrc/tcell/v2"
+	"github.com/ernestrc/tcell/v3"
 )
 
 var screen tcell.Screen
