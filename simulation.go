@@ -16,17 +16,12 @@ package tcell
 
 import (
 	"unicode/utf8"
-
-	"golang.org/x/text/transform"
 )
 
 // NewSimulationScreen returns a SimulationScreen.  Note that
 // SimulationScreen is also a Screen.
-func NewSimulationScreen(charset string) SimulationScreen {
-	if charset == "" {
-		charset = "UTF-8"
-	}
-	ss := &simscreen{charset: charset}
+func NewSimulationScreen() SimulationScreen {
+	ss := &simscreen{}
 	ss.Screen = &baseScreen{screenImpl: ss}
 	return ss
 }
@@ -93,9 +88,6 @@ type simscreen struct {
 	cursorvis bool
 	mouse     bool
 	paste     bool
-	charset   string
-	encoder   transform.Transformer
-	decoder   transform.Transformer
 	fillchar  rune
 	fillstyle Style
 	fallback  map[rune]string
@@ -114,13 +106,6 @@ func (s *simscreen) Init() error {
 	s.cursorx = -1
 	s.cursory = -1
 	s.style = StyleDefault
-
-	if enc := GetEncoding(s.charset); enc != nil {
-		s.encoder = enc.NewEncoder()
-		s.decoder = enc.NewDecoder()
-	} else {
-		return ErrNoCharset
-	}
 
 	s.front = make([]SimCell, s.physw*s.physh)
 	s.back.Resize(80, 25)
@@ -177,20 +162,15 @@ func (s *simscreen) drawCell(x, y int) int {
 		return width
 	}
 
-	lbuf := make([]byte, 12)
 	ubuf := make([]byte, 12)
-	nout := 0
 
 	for _, r := range simc.Runes {
 
 		l := utf8.EncodeRune(ubuf, r)
+		ubuf = ubuf[:l]
 
-		nout, _, _ = s.encoder.Transform(lbuf, ubuf[:l], true)
-
-		if nout == 0 || lbuf[0] == '\x1a' {
-
+		if ubuf[0] == '\x1a' {
 			// skip combining
-
 			if subst, ok := s.fallback[r]; ok {
 				simc.Bytes = append(simc.Bytes,
 					[]byte(subst)...)
@@ -202,7 +182,7 @@ func (s *simscreen) drawCell(x, y int) int {
 				simc.Bytes = append(simc.Bytes, '?')
 			}
 		} else {
-			simc.Bytes = append(simc.Bytes, lbuf[:nout]...)
+			simc.Bytes = append(simc.Bytes, ubuf...)
 		}
 	}
 	s.back.SetDirty(x, y, false)
@@ -390,20 +370,14 @@ outer:
 			continue
 		}
 
-		utfb := make([]byte, len(b)*4) // worst case
 		for l := 1; l < len(b); l++ {
-			s.decoder.Reset()
-			nout, nin, _ := s.decoder.Transform(utfb, b[:l], true)
-
-			if nout != 0 {
-				r, _ := utf8.DecodeRune(utfb[:nout])
-				if r != utf8.RuneError {
-					ev := NewEventKey(KeyRune, r, ModNone, nil)
-					s.postEvent(ev)
-				}
-				b = b[nin:]
-				continue outer
+			r, nin := utf8.DecodeRune(b[:l])
+			if r != utf8.RuneError {
+				ev := NewEventKey(KeyRune, r, ModNone, nil)
+				s.postEvent(ev)
 			}
+			b = b[nin:]
+			continue outer
 		}
 		failed = true
 		b = b[1:]
@@ -411,10 +385,6 @@ outer:
 	}
 
 	return !failed
-}
-
-func (s *simscreen) CharacterSet() string {
-	return s.charset
 }
 
 func (s *simscreen) SetSize(w, h int) {
@@ -451,16 +421,11 @@ func (s *simscreen) UnregisterRuneFallback(r rune) {
 
 func (s *simscreen) CanDisplay(r rune, checkFallbacks bool) bool {
 
-	if enc := s.encoder; enc != nil {
-		nb := make([]byte, 6)
-		ob := make([]byte, 6)
-		num := utf8.EncodeRune(ob, r)
+	ob := make([]byte, 6)
+	num := utf8.EncodeRune(ob, r)
 
-		enc.Reset()
-		dst, _, err := enc.Transform(nb, ob[:num], true)
-		if dst != 0 && err == nil && nb[0] != '\x1A' {
-			return true
-		}
+	if num != 0 && ob[0] != '\x1A' {
+		return true
 	}
 	if !checkFallbacks {
 		return false

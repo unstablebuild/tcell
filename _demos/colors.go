@@ -97,7 +97,6 @@ func flipcoin() bool {
 func main() {
 
 	rand.Seed(time.Now().UnixNano())
-	tcell.SetEncodingFallback(tcell.EncodingFallbackASCII)
 	s, e := tcell.NewScreen()
 	if e != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", e)

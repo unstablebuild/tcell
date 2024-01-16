@@ -28,7 +28,6 @@ import (
 	"os"
 
 	"github.com/ernestrc/tcell/v3"
-	"github.com/ernestrc/tcell/v3/encoding"
 
 	"github.com/mattn/go-runewidth"
 	"github.com/mattn/go-sixel"
@@ -124,7 +123,6 @@ func loadImage(path string) (image.Image, error) {
 }
 
 func main() {
-	encoding.Register()
 
 	s, e := tcell.NewScreen()
 	if e != nil {

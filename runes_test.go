@@ -19,12 +19,9 @@ import (
 )
 
 func TestCanDisplayUTF8(t *testing.T) {
-	s := mkTestScreen(t, "UTF-8")
+	s := mkTestScreen(t)
 	defer s.Fini()
 
-	if s.CharacterSet() != "UTF-8" {
-		t.Errorf("Bad charset: %v", s.CharacterSet())
-	}
 	if !s.CanDisplay('a', true) {
 		t.Errorf("Should be able to display 'a'")
 	}
@@ -36,60 +33,5 @@ func TestCanDisplayUTF8(t *testing.T) {
 	}
 	if !s.CanDisplay('⌀', false) {
 		t.Errorf("Should be able to display null")
-	}
-}
-func TestCanDisplayASCII(t *testing.T) {
-	s := mkTestScreen(t, "US-ASCII")
-	defer s.Fini()
-
-	if s.CharacterSet() != "US-ASCII" {
-		t.Errorf("Wrong character set: %v", s.CharacterSet())
-	}
-	if !s.CanDisplay('a', true) {
-		t.Errorf("Should be able to display 'a'")
-	}
-	if !s.CanDisplay(RuneHLine, true) {
-		t.Errorf("Should be able to display hline (with fallback)")
-	}
-	if s.CanDisplay(RunePi, false) {
-		t.Errorf("Should not be able to display Pi (no fallback)")
-	}
-	if s.CanDisplay('⌀', false) {
-		t.Errorf("Should not be able to display null")
-	}
-}
-
-func TestRuneFallbacks(t *testing.T) {
-	s := mkTestScreen(t, "US-ASCII")
-	defer s.Fini()
-	if s.CharacterSet() != "US-ASCII" {
-		t.Errorf("Wrong character set: %v", s.CharacterSet())
-	}
-
-	// Test registering a fallback
-	s.RegisterRuneFallback('⌀', "o")
-	if s.CanDisplay('⌀', false) {
-		t.Errorf("Should not be able to display null (no fallback)")
-	}
-	if !s.CanDisplay('⌀', true) {
-		t.Errorf("Should be able to display null (with fallback)")
-	}
-
-	// Test unregistering custom fallback
-	s.UnregisterRuneFallback('⌀')
-	if s.CanDisplay('⌀', false) {
-		t.Errorf("Should not be able to display null (no fallback)")
-	}
-	if s.CanDisplay('⌀', true) {
-		t.Errorf("Should not be able to display null (with fallback)")
-	}
-
-	// Test unregistering builtin fallback
-	if !s.CanDisplay(RuneHLine, true) {
-		t.Errorf("Should be able to display hline")
-	}
-	s.UnregisterRuneFallback(RuneHLine)
-	if s.CanDisplay(RuneHLine, true) {
-		t.Errorf("Should not be able to display hline")
 	}
 }

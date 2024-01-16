@@ -162,13 +162,6 @@ type Screen interface {
 	// manner possible.
 	Show()
 
-	// CharacterSet returns information about the character set.
-	// This isn't the full locale, but it does give us the input/output
-	// character set.  Note that this is just for diagnostic purposes,
-	// we normally translate input/output to/from UTF-8, regardless of
-	// what the user's environment is.
-	CharacterSet() string
-
 	// RegisterRuneFallback adds a fallback for runes that are not
 	// part of the character set -- for example one could register
 	// o as a fallback for ø.  This should be done cautiously for
@@ -284,7 +277,6 @@ type screenImpl interface {
 	HasMouse() bool
 	Colors() int
 	Show()
-	CharacterSet() string
 	RegisterRuneFallback(r rune, subst string)
 	UnregisterRuneFallback(r rune)
 	CanDisplay(r rune, checkFallbacks bool) bool
