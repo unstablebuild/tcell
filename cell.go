@@ -41,46 +41,36 @@ type CellBuffer struct {
 func (cb *CellBuffer) SetContentWidth(x int, y int,
 	mainc rune, combc []rune, width int, style Style,
 ) {
-	if x >= 0 && y >= 0 && x < cb.w && y < cb.h {
-		c := &cb.cells[(y*cb.w)+x]
+	if x >= cb.w || y >= cb.h {
+		return
+	}
 
-		for i := 1; i < c.width; i++ {
-			cb.SetDirty(x+i, y, true)
-		}
+	c := &cb.cells[(y*cb.w)+x]
+	c.currComb = combc
+	c.width = width
+	c.currMain = mainc
+	c.currStyle = style
 
-		// NOTE: behaviour is diff from above:
-		// combc should not be re-used to save an allocation.
-		c.currComb = combc
-
-		c.width = width
-		c.currMain = mainc
-		if style.fg == ColorNone {
-			style.fg = c.currStyle.fg
-		}
-		if style.bg == ColorNone {
-			style.bg = c.currStyle.bg
-		}
-		c.currStyle = style
+	for i := 1; i < width; i++ {
+		cb.SetDirty(x+i, y, true)
 	}
 }
 
 // GetContent returns the contents of a character cell, including the
 // primary rune, any combining character runes (which will usually be
 // nil), the style, and the display width in cells.
-func (cb *CellBuffer) GetContent(x, y int) (rune, []rune, Style, int) {
-	var mainc rune
-	var combc []rune
-	var style Style
-	var width int
+func (cb *CellBuffer) GetContent(x, y int) (
+	mainc rune, combc []rune, style Style, width int, dirty bool,
+) {
 	c := &cb.cells[(y*cb.w)+x]
-	mainc, combc, style = c.currMain, c.currComb, c.currStyle
+	mainc, combc, style, width = c.currMain, c.currComb, c.currStyle, c.width
 	// it is imperative that width is never 0 or otherwise
-	// SetContent calculations might fail
-	if width = c.width; width == 0 || mainc < ' ' {
+	// SetContent next cell calculations might fail
+	if width == 0 {
 		width = 1
 		mainc = ' '
 	}
-	return mainc, combc, style, width
+	return mainc, combc, style, width, cb.dirty(c)
 
 }
 
@@ -100,25 +90,14 @@ func (cb *CellBuffer) Invalidate() {
 // refreshed on the physical display.  This returns true if the cell
 // content is different since the last time it was marked clean.
 func (cb *CellBuffer) Dirty(x, y int) bool {
-	c := &cb.cells[(y*cb.w)+x]
-	if c.lastMain == rune(0) {
-		return true
-	}
-	if c.lastMain != c.currMain {
-		return true
-	}
-	if c.lastStyle != c.currStyle {
-		return true
-	}
-	if len(c.lastComb) != len(c.currComb) {
-		return true
-	}
-	for i := range c.lastComb {
-		if c.lastComb[i] != c.currComb[i] {
-			return true
-		}
-	}
-	return false
+	return cb.dirty(&cb.cells[(y*cb.w)+x])
+}
+
+func (cb *CellBuffer) dirty(c *cell) bool {
+	return c.lastMain == rune(0) ||
+		c.lastMain != c.currMain ||
+		c.lastStyle != c.currStyle ||
+		len(c.lastComb) != len(c.currComb)
 }
 
 // SetDirty is normally used to indicate that a cell has
@@ -149,7 +128,7 @@ func (cb *CellBuffer) Resize(w, h int) {
 	newc := make([]cell, w*h)
 	for y := 0; y < h && y < cb.h; y++ {
 		for x := 0; x < w && x < cb.w; x++ {
-			oc := cb.cells[(y*cb.w)+x]
+			oc := &cb.cells[(y*cb.w)+x]
 			nc := &newc[(y*w)+x]
 			nc.currMain = oc.currMain
 			nc.currComb = oc.currComb

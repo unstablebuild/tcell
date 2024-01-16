@@ -40,7 +40,7 @@ type Screen interface {
 	// be displayed if Show() or Sync() is called.  The width is the width
 	// in screen cells; most often this will be 1, but some East Asian
 	// characters and emoji require two cells.
-	GetContent(x, y int) (primary rune, combining []rune, style Style, width int)
+	GetContent(x, y int) (primary rune, combining []rune, style Style, width int, dirty bool)
 
 	// SetContent sets the contents of the given cell location.  If
 	// the coordinates are out of range, then the operation is ignored.
@@ -162,46 +162,6 @@ type Screen interface {
 	// manner possible.
 	Show()
 
-	// RegisterRuneFallback adds a fallback for runes that are not
-	// part of the character set -- for example one could register
-	// o as a fallback for ø.  This should be done cautiously for
-	// characters that might be displayed ordinarily in language
-	// specific text -- characters that could change the meaning of
-	// written text would be dangerous.  The intention here is to
-	// facilitate fallback characters in pseudo-graphical applications.
-	//
-	// If the terminal has fallbacks already in place via an alternate
-	// character set, those are used in preference.  Also, standard
-	// fallbacks for graphical characters in the alternate character set
-	// terminfo string are registered implicitly.
-	//
-	// The display string should be the same width as original rune.
-	// This makes it possible to register two character replacements
-	// for full width East Asian characters, for example.
-	//
-	// It is recommended that replacement strings consist only of
-	// 7-bit ASCII, since other characters may not display everywhere.
-	RegisterRuneFallback(r rune, subst string)
-
-	// UnregisterRuneFallback unmaps a replacement.  It will unmap
-	// the implicit ASCII replacements for alternate characters as well.
-	// When an unmapped char needs to be displayed, but no suitable
-	// glyph is available, '?' is emitted instead.  It is not possible
-	// to "disable" the use of alternate characters that are supported
-	// by your terminal except by changing the terminal database.
-	UnregisterRuneFallback(r rune)
-
-	// CanDisplay returns true if the given rune can be displayed on
-	// this screen.  Note that this is a best-guess effort -- whether
-	// your fonts support the character or not may be questionable.
-	// Mostly this is for folks who work outside of Unicode.
-	//
-	// If checkFallbacks is true, then if any (possibly imperfect)
-	// fallbacks are registered, this will return true.  This will
-	// also return true if the terminal can replace the glyph with
-	// one that is visually indistinguishable from the one requested.
-	CanDisplay(r rune, checkFallbacks bool) bool
-
 	// HasKey returns true if the keyboard is believed to have the
 	// key.  In some cases a keyboard may have keys with this name
 	// but no support for them, while in others a key may be reported
@@ -277,9 +237,6 @@ type screenImpl interface {
 	HasMouse() bool
 	Colors() int
 	Show()
-	RegisterRuneFallback(r rune, subst string)
-	UnregisterRuneFallback(r rune)
-	CanDisplay(r rune, checkFallbacks bool) bool
 	HasKey(Key) bool
 	Beep() error
 	Tty() (Tty, bool)
@@ -316,18 +273,11 @@ func (b *baseScreen) Fill(r rune, style Style) {
 }
 
 func (b *baseScreen) SetContent(x, y int, mainc rune, combc []rune, width int, st Style) {
-	cells := b.GetCells()
-	cells.SetContentWidth(x, y, mainc, combc, width, st)
+	b.GetCells().SetContentWidth(x, y, mainc, combc, width, st)
 }
 
-func (b *baseScreen) GetContent(x, y int) (rune, []rune, Style, int) {
-	var primary rune
-	var combining []rune
-	var style Style
-	var width int
-	cells := b.GetCells()
-	primary, combining, style, width = cells.GetContent(x, y)
-	return primary, combining, style, width
+func (b *baseScreen) GetContent(x, y int) (rune, []rune, Style, int, bool) {
+	return b.GetCells().GetContent(x, y)
 }
 
 func (b *baseScreen) Poll() <-chan Event {

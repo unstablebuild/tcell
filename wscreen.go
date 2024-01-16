@@ -28,7 +28,6 @@ import (
 
 func NewTerminfoScreen() (Screen, error) {
 	t := &wScreen{}
-	t.fallback = make(map[rune]string)
 
 	return &baseScreen{screenImpl: t}, nil
 }
@@ -48,7 +47,6 @@ type wScreen struct {
 
 	quit     chan struct{}
 	evch     chan Event
-	fallback map[rune]string
 	finiOnce sync.Once
 
 	sync.Mutex
@@ -395,31 +393,6 @@ func (t *wScreen) onFocus(this js.Value, args []js.Value) interface{} {
 // js, it redirects here and does nothing).
 func (t *wScreen) unset(this js.Value, args []js.Value) interface{} {
 	return nil
-}
-
-func (t *wScreen) RegisterRuneFallback(orig rune, fallback string) {
-	t.Lock()
-	t.fallback[orig] = fallback
-	t.Unlock()
-}
-
-func (t *wScreen) UnregisterRuneFallback(orig rune) {
-	t.Lock()
-	delete(t.fallback, orig)
-	t.Unlock()
-}
-
-func (t *wScreen) CanDisplay(r rune, checkFallbacks bool) bool {
-	if utf8.ValidRune(r) {
-		return true
-	}
-	if !checkFallbacks {
-		return false
-	}
-	if _, ok := t.fallback[r]; ok {
-		return true
-	}
-	return false
 }
 
 func (t *wScreen) HasMouse() bool {
