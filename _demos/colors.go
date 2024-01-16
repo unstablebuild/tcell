@@ -29,7 +29,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/ernestrc/tcell/v2"
+	"github.com/ernestrc/tcell/v3"
 )
 
 var red = int32(rand.Int() % 256)

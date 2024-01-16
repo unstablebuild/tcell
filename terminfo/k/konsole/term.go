@@ -2,7 +2,7 @@
 
 package konsole
 
-import "github.com/ernestrc/tcell/v2/terminfo"
+import "github.com/ernestrc/tcell/v3/terminfo"
 
 func init() {
 

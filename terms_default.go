@@ -20,5 +20,5 @@ package tcell
 import (
 	// This imports the default terminal entries.  To disable, use the
 	// tcell_minimal build tag.
-	_ "github.com/ernestrc/tcell/v2/terminfo/extended"
+	_ "github.com/ernestrc/tcell/v3/terminfo/extended"
 )

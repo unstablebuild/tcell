@@ -31,10 +31,10 @@ import (
 	"golang.org/x/term"
 	"golang.org/x/text/transform"
 
-	"github.com/ernestrc/tcell/v2/terminfo"
+	"github.com/ernestrc/tcell/v3/terminfo"
 
 	// import the stock terminals
-	_ "github.com/ernestrc/tcell/v2/terminfo/base"
+	_ "github.com/ernestrc/tcell/v3/terminfo/base"
 )
 
 // NewTerminfoScreen returns a Screen that uses the stock TTY interface
