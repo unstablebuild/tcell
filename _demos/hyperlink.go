@@ -22,7 +22,6 @@ import (
 	"os"
 
 	"github.com/ernestrc/tcell/v3"
-	"github.com/ernestrc/tcell/v3/encoding"
 
 	"github.com/mattn/go-runewidth"
 )
@@ -57,8 +56,6 @@ func displayDemo(s tcell.Screen) {
 
 // This program just prints "Hello, World!".  Press ESC to exit.
 func main() {
-	encoding.Register()
-
 	s, e := tcell.NewScreen()
 	if e != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", e)

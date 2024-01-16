@@ -35,7 +35,7 @@ func eventLoop(s Screen, evch chan Event) {
 
 func TestMouseEvents(t *testing.T) {
 
-	s := mkTestScreen(t, "")
+	s := mkTestScreen(t)
 	defer s.Fini()
 
 	s.EnableMouse()
@@ -71,7 +71,7 @@ func TestMouseEvents(t *testing.T) {
 
 func TestChannelMouseEvents(t *testing.T) {
 
-	s := mkTestScreen(t, "")
+	s := mkTestScreen(t)
 	defer s.Fini()
 
 	s.EnableMouse()

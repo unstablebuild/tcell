@@ -27,7 +27,6 @@ import (
 	"runtime"
 
 	"github.com/ernestrc/tcell/v3"
-	"github.com/ernestrc/tcell/v3/encoding"
 
 	"github.com/mattn/go-runewidth"
 )
@@ -111,8 +110,6 @@ func main() {
 			shell = "/bin/sh"
 		}
 	}
-
-	encoding.Register()
 
 	s, e := tcell.NewScreen()
 	if e != nil {

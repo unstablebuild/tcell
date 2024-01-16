@@ -29,7 +29,6 @@ import (
 	"unicode/utf8"
 
 	"golang.org/x/term"
-	"golang.org/x/text/transform"
 
 	"github.com/ernestrc/tcell/v3/terminfo"
 
@@ -134,9 +133,6 @@ type tScreen struct {
 	cursorx      int
 	cursory      int
 	acs          map[rune]string
-	charset      string
-	encoder      transform.Transformer
-	decoder      transform.Transformer
 	fallback     map[rune]string
 	colors       map[Color]Color
 	palette      []Color
@@ -170,15 +166,7 @@ func (t *tScreen) Init() error {
 
 	t.keychan = make(chan []byte, 10)
 	t.keytimer = time.NewTimer(time.Millisecond * 50)
-	t.charset = "UTF-8"
 
-	t.charset = getCharset()
-	if enc := GetEncoding(t.charset); enc != nil {
-		t.encoder = enc.NewEncoder()
-		t.decoder = enc.NewDecoder()
-	} else {
-		return ErrNoCharset
-	}
 	ti := t.ti
 
 	// environment overrides
@@ -585,18 +573,9 @@ func (t *tScreen) SetStyle(style Style) {
 }
 
 func (t *tScreen) encodeRune(r rune, buf []byte) []byte {
-
-	nb := make([]byte, 6)
-	ob := make([]byte, 6)
-	num := utf8.EncodeRune(ob, r)
-	ob = ob[:num]
-	dst := 0
+	ob := []byte(string(r))
 	var err error
-	if enc := t.encoder; enc != nil {
-		enc.Reset()
-		dst, _, err = enc.Transform(nb, ob, true)
-	}
-	if err != nil || dst == 0 || nb[0] == '\x1a' {
+	if err != nil || ob[0] == '\x1a' {
 		// Combining characters are elided
 		if len(buf) == 0 {
 			if acs, ok := t.acs[r]; ok {
@@ -608,7 +587,7 @@ func (t *tScreen) encodeRune(r rune, buf []byte) []byte {
 			}
 		}
 	} else {
-		buf = append(buf, nb[:dst]...)
+		buf = append(buf, ob...)
 	}
 
 	return buf
@@ -1502,29 +1481,21 @@ func (t *tScreen) parseRune(buf *bytes.Buffer, evs *[]Event) (bool, bool) {
 		return false, false
 	}
 
-	utf := make([]byte, 12)
 	for l := 1; l <= len(b); l++ {
-		t.decoder.Reset()
-		nOut, nIn, e := t.decoder.Transform(utf, b[:l], true)
-		if e == transform.ErrShortSrc {
-			continue
-		}
-		if nOut != 0 {
-			r, _ := utf8.DecodeRune(utf[:nOut])
-			if r != utf8.RuneError {
-				mod := ModNone
-				if t.escaped {
-					mod = ModAlt
-					t.escaped = false
-				}
-				*evs = append(*evs, NewEventKey(KeyRune, r, mod, cloneBuf(buf, nIn)))
+		r, nIn := utf8.DecodeRune(b[:l])
+		if r != utf8.RuneError {
+			mod := ModNone
+			if t.escaped {
+				mod = ModAlt
+				t.escaped = false
 			}
-			for nIn > 0 {
-				_, _ = buf.ReadByte()
-				nIn--
-			}
-			return true, true
+			*evs = append(*evs, NewEventKey(KeyRune, r, mod, cloneBuf(buf, nIn)))
 		}
+		for nIn > 0 {
+			_, _ = buf.ReadByte()
+			nIn--
+		}
+		return true, true
 	}
 	// Looks like potential escape
 	return true, false
@@ -1703,10 +1674,6 @@ func (t *tScreen) inputLoop(stopQ chan struct{}) {
 	}
 }
 
-func (t *tScreen) CharacterSet() string {
-	return t.charset
-}
-
 func (t *tScreen) RegisterRuneFallback(orig rune, fallback string) {
 	t.fallback[orig] = fallback
 }
@@ -1716,17 +1683,9 @@ func (t *tScreen) UnregisterRuneFallback(orig rune) {
 }
 
 func (t *tScreen) CanDisplay(r rune, checkFallbacks bool) bool {
-
-	if enc := t.encoder; enc != nil {
-		nb := make([]byte, 6)
-		ob := make([]byte, 6)
-		num := utf8.EncodeRune(ob, r)
-
-		enc.Reset()
-		dst, _, err := enc.Transform(nb, ob[:num], true)
-		if dst != 0 && err == nil && nb[0] != '\x1A' {
-			return true
-		}
+	nb := []byte(string(r))
+	if nb[0] != '\x1A' {
+		return true
 	}
 	// Terminal fallbacks always permitted, since we assume they are
 	// basically nearly perfect renditions.

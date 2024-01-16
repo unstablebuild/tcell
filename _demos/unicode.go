@@ -24,7 +24,6 @@ import (
 	"os"
 
 	"github.com/ernestrc/tcell/v3"
-	"github.com/ernestrc/tcell/v3/encoding"
 	"github.com/rivo/uniseg"
 )
 
@@ -59,8 +58,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	encoding.Register()
-
 	if e = s.Init(); e != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", e)
 		os.Exit(1)
@@ -78,7 +75,6 @@ func main() {
 
 	style = bold
 	putln(s, "Press ESC to Exit")
-	putln(s, "Character set: "+s.CharacterSet())
 	style = plain
 
 	putln(s, "English:   October")

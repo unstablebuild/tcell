@@ -18,8 +18,8 @@ import (
 	"testing"
 )
 
-func mkTestScreen(t *testing.T, charset string) SimulationScreen {
-	s := NewSimulationScreen(charset)
+func mkTestScreen(t *testing.T) SimulationScreen {
+	s := NewSimulationScreen()
 	if s == nil {
 		t.Fatalf("Failed to get simulation screen")
 	}
@@ -31,14 +31,11 @@ func mkTestScreen(t *testing.T, charset string) SimulationScreen {
 
 func TestInitScreen(t *testing.T) {
 
-	s := mkTestScreen(t, "")
+	s := mkTestScreen(t)
 	defer s.Fini()
 
 	if x, y := s.Size(); x != 80 || y != 25 {
 		t.Fatalf("Size should be 80, 25, was %v, %v", x, y)
-	}
-	if s.CharacterSet() != "UTF-8" {
-		t.Fatalf("Character Set (%v) not UTF-8", s.CharacterSet())
 	}
 	if b, x, y := s.GetContents(); len(b) != x*y || x != 80 || y != 25 {
 		t.Fatalf("Contents (%v, %v, %v) wrong", len(b), x, y)
@@ -46,7 +43,7 @@ func TestInitScreen(t *testing.T) {
 }
 
 func TestClearScreen(t *testing.T) {
-	s := mkTestScreen(t, "")
+	s := mkTestScreen(t)
 	defer s.Fini()
 	s.Clear()
 	b, x, y := s.GetContents()
@@ -65,7 +62,7 @@ func TestClearScreen(t *testing.T) {
 
 func TestSetCell(t *testing.T) {
 	st := StyleDefault.Background(ColorRed).Blink(true)
-	s := mkTestScreen(t, "")
+	s := mkTestScreen(t)
 	defer s.Fini()
 	s.SetContent(2, 5, '@', nil, 1, st)
 	b, _, _ := s.GetContents()
@@ -83,7 +80,7 @@ func TestSetCell(t *testing.T) {
 
 func TestResize(t *testing.T) {
 	st := StyleDefault.Background(ColorYellow).Underline(true)
-	s := mkTestScreen(t, "")
+	s := mkTestScreen(t)
 	defer s.Fini()
 	s.SetContent(2, 5, '&', nil, 1, st)
 	b, x, y := s.GetContents()
@@ -111,7 +108,7 @@ func TestResize(t *testing.T) {
 }
 
 func TestBeep(t *testing.T) {
-	s := mkTestScreen(t, "")
+	s := mkTestScreen(t)
 	defer s.Fini()
 
 	b0, x0, y0 := s.GetContents()

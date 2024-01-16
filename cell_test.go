@@ -30,7 +30,7 @@ func BenchmarkIntegrationSmallResize(b *testing.B) {
 }
 
 func benchmarkIntegration(b *testing.B, resize bool, width, height int) {
-	s := NewSimulationScreen("UTF-8")
+	s := NewSimulationScreen()
 	err := s.Init()
 	if err != nil {
 		b.Fatalf("Init screen: %v", err)
