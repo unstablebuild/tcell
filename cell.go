@@ -66,9 +66,10 @@ func (cb *CellBuffer) GetContent(x, y int) (
 	mainc, combc, style, width = c.currMain, c.currComb, c.currStyle, c.width
 	// it is imperative that width is never 0 or otherwise
 	// SetContent next cell calculations might fail
-	if width == 0 {
+	if width == 0 || mainc < ' ' {
 		width = 1
 		mainc = ' '
+		combc = nil
 	}
 	return mainc, combc, style, width, cb.dirty(c)
 
