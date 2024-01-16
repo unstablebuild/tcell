@@ -145,7 +145,7 @@ func TestFromImageColor(t *testing.T) {
 }
 
 func TestColorNone(t *testing.T) {
-	s := mkTestScreen(t, "")
+	s := mkTestScreen(t)
 	s.Init()
 	s.SetSize(80, 24)
 	st := StyleDefault.Foreground(ColorBlack).Background(ColorWhite)

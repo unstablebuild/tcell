@@ -34,9 +34,7 @@
 // not available.  If no ACS is available, then some ASCII fallbacks will
 // be used.
 //
-// Note that support for non-UTF-8 locales (other than C)  must be enabled
-// by the application using RegisterEncoding() -- we don't have them all
-// enabled by default to avoid bloating the application unnecessarily.
+// Note non-UTF-8 locales are not supported (other than C)
 // (These days UTF-8 is good enough for almost everyone, and nobody should
 // be using legacy locales anymore.)  Also, actual glyphs for various code
 // point will only be displayed if your terminal or emulator (or the font

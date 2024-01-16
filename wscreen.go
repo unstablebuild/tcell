@@ -397,10 +397,6 @@ func (t *wScreen) unset(this js.Value, args []js.Value) interface{} {
 	return nil
 }
 
-func (t *wScreen) CharacterSet() string {
-	return "UTF-8"
-}
-
 func (t *wScreen) RegisterRuneFallback(orig rune, fallback string) {
 	t.Lock()
 	t.fallback[orig] = fallback
