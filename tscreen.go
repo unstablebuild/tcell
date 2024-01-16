@@ -890,6 +890,12 @@ func (t *tScreen) draw() {
 		for x := 0; x < t.w; x++ {
 			width := t.drawCell(x, y)
 			if width > 1 {
+				for i := 1; i < width && x+i < t.w; i++ {
+					// this is necessary so that if we ever
+					// go back to drawing that cell, we
+					// actually will re-draw it.
+					t.cells.SetDirty(x+i, y, true)
+				}
 				x += width - 1
 			}
 		}
