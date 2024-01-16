@@ -26,8 +26,6 @@ type Style struct {
 	fg    Color
 	bg    Color
 	attrs AttrMask
-	url   string
-	urlId string
 }
 
 // StyleDefault represents a default style, based upon the context.
@@ -44,8 +42,6 @@ func (s Style) Foreground(c Color) Style {
 		fg:    c,
 		bg:    s.bg,
 		attrs: s.attrs,
-		url:   s.url,
-		urlId: s.urlId,
 	}
 }
 
@@ -56,8 +52,6 @@ func (s Style) Background(c Color) Style {
 		fg:    s.fg,
 		bg:    c,
 		attrs: s.attrs,
-		url:   s.url,
-		urlId: s.urlId,
 	}
 }
 
@@ -73,16 +67,12 @@ func (s Style) setAttrs(attrs AttrMask, on bool) Style {
 			fg:    s.fg,
 			bg:    s.bg,
 			attrs: s.attrs | attrs,
-			url:   s.url,
-			urlId: s.urlId,
 		}
 	}
 	return Style{
 		fg:    s.fg,
 		bg:    s.bg,
 		attrs: s.attrs &^ attrs,
-		url:   s.url,
-		urlId: s.urlId,
 	}
 }
 
@@ -143,34 +133,5 @@ func (s Style) Attributes(attrs AttrMask) Style {
 		fg:    s.fg,
 		bg:    s.bg,
 		attrs: attrs,
-		url:   s.url,
-		urlId: s.urlId,
-	}
-}
-
-// Url returns a style with the Url set.  If the provided Url is not empty,
-// and the terminal supports it, text will typically be marked up as a clickable
-// link to that Url.  If the Url is empty, then this mode is turned off.
-func (s Style) Url(url string) Style {
-	return Style{
-		fg:    s.fg,
-		bg:    s.bg,
-		attrs: s.attrs,
-		url:   url,
-		urlId: s.urlId,
-	}
-}
-
-// UrlId returns a style with the UrlId set. If the provided UrlId is not empty,
-// any marked up Url with this style will be given the UrlId also. If the
-// terminal supports it, any text with the same UrlId will be grouped as if it
-// were one Url, even if it spans multiple lines.
-func (s Style) UrlId(id string) Style {
-	return Style{
-		fg:    s.fg,
-		bg:    s.bg,
-		attrs: s.attrs,
-		url:   s.url,
-		urlId: "id=" + id,
 	}
 }

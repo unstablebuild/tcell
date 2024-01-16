@@ -117,13 +117,13 @@ func AttributeToStyle(fg, bg Attribute) tcell.Style {
 
 	if Attribute(fColor) != ColorDefault {
 		f = tcell.PaletteColor(fColor - 1)
+		f = fixColor(f)
 	}
 	if Attribute(bColor) != ColorDefault {
 		b = tcell.PaletteColor(bColor - 1)
+		b = fixColor(b)
 	}
 
-	f = fixColor(f)
-	b = fixColor(b)
 	st = st.Foreground(f).Background(b)
 	if (fg|bg)&AttrBold != 0 {
 		st = st.Bold(true)
