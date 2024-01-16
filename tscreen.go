@@ -88,12 +88,6 @@ func NewTerminfoScreenFromTtyTerminfo(tty Tty, ti *terminfo.Terminfo) (s Screen,
 		t.mouse = []byte(ti.Mouse)
 	}
 	t.prepareKeys()
-	t.buildAcsMap()
-	t.fallback = make(map[rune]string)
-	for k, v := range RuneFallbacks {
-		t.fallback[k] = v
-	}
-
 	return &baseScreen{screenImpl: t}, nil
 }
 
@@ -134,8 +128,6 @@ type tScreen struct {
 	mouse        []byte
 	cursorx      int
 	cursory      int
-	acs          map[rune]string
-	fallback     map[rune]string
 	colors       map[Color]Color
 	palette      []Color
 	truecolor    bool
@@ -574,26 +566,6 @@ func (t *tScreen) SetStyle(style Style) {
 	t.style = style
 }
 
-func (t *tScreen) encodeRune(r rune, buf []byte) []byte {
-	ob := []byte(string(r))
-	if ob[0] == '\x1a' {
-		// Combining characters are elided
-		if len(buf) == 0 {
-			if acs, ok := t.acs[r]; ok {
-				buf = append(buf, []byte(acs)...)
-			} else if fb, ok := t.fallback[r]; ok {
-				buf = append(buf, []byte(fb)...)
-			} else {
-				buf = append(buf, '?')
-			}
-		}
-	} else {
-		buf = append(buf, ob...)
-	}
-
-	return buf
-}
-
 func (t *tScreen) sendFgBg(fg Color, bg Color, attr AttrMask) AttrMask {
 	ti := t.ti
 	if ti.Colors == 0 {
@@ -679,8 +651,8 @@ func (t *tScreen) drawCell(x, y int) int {
 
 	ti := t.ti
 
-	mainc, combc, style, width := t.cells.GetContent(x, y)
-	if !t.cells.Dirty(x, y) {
+	mainc, combc, style, width, dirty := t.cells.GetContent(x, y)
+	if !dirty {
 		return width
 	}
 
@@ -754,32 +726,17 @@ func (t *tScreen) drawCell(x, y int) int {
 	// wide character, and to ensure that we emit exactly one regular
 	// character followed up by any residual combing characters
 
-	if width < 1 {
+	if x+width > t.w {
 		width = 1
+		t.writeString(" ")
+		t.cx += width
+		t.cells.SetDirty(x, y, false)
+		return width
 	}
 
-	var str string
+	t.writeString(string(mainc))
+	t.writeString(string(combc))
 
-	buf := make([]byte, 0, 6)
-
-	buf = t.encodeRune(mainc, buf)
-	for _, r := range combc {
-		buf = t.encodeRune(r, buf)
-	}
-
-	str = string(buf)
-	if width > 1 && str == "?" {
-		// No FullWidth character support
-		str = "? "
-		t.cx = -1
-	}
-
-	if x > t.w-width {
-		// too wide to fit; emit a single space instead
-		width = 1
-		str = " "
-	}
-	t.writeString(str)
 	t.cx += width
 	t.cells.SetDirty(x, y, false)
 	if width > 1 {
@@ -1116,23 +1073,6 @@ var vtACSNames = map[byte]rune{
 	'|': RuneNEqual,
 	'}': RuneSterling,
 	'~': RuneBullet,
-}
-
-// buildAcsMap builds a map of characters that we translate from Unicode to
-// alternate character encodings.  To do this, we use the standard VT100 ACS
-// maps.  This is only done if the terminal lacks support for Unicode; we
-// always prefer to emit Unicode glyphs when we are able.
-func (t *tScreen) buildAcsMap() {
-	acsstr := t.ti.AltChars
-	t.acs = make(map[rune]string)
-	for len(acsstr) > 2 {
-		srcv := acsstr[0]
-		dstv := string(acsstr[1])
-		if r, ok := vtACSNames[srcv]; ok {
-			t.acs[r] = t.ti.EnterAcs + dstv + t.ti.ExitAcs
-		}
-		acsstr = acsstr[2:]
-	}
 }
 
 func (t *tScreen) PostEventWait(ev Event) {
@@ -1686,33 +1626,6 @@ func (t *tScreen) inputLoop(stopQ chan struct{}) {
 			}
 		}
 	}
-}
-
-func (t *tScreen) RegisterRuneFallback(orig rune, fallback string) {
-	t.fallback[orig] = fallback
-}
-
-func (t *tScreen) UnregisterRuneFallback(orig rune) {
-	delete(t.fallback, orig)
-}
-
-func (t *tScreen) CanDisplay(r rune, checkFallbacks bool) bool {
-	nb := []byte(string(r))
-	if nb[0] != '\x1A' {
-		return true
-	}
-	// Terminal fallbacks always permitted, since we assume they are
-	// basically nearly perfect renditions.
-	if _, ok := t.acs[r]; ok {
-		return true
-	}
-	if !checkFallbacks {
-		return false
-	}
-	if _, ok := t.fallback[r]; ok {
-		return true
-	}
-	return false
 }
 
 func (t *tScreen) HasMouse() bool {

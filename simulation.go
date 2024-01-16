@@ -135,56 +135,27 @@ func (s *simscreen) SetStyle(style Style) {
 
 func (s *simscreen) drawCell(x, y int) int {
 
-	mainc, combc, style, width := s.back.GetContent(x, y)
-	if !s.back.Dirty(x, y) {
+	mainc, combc, style, width, dirty := s.back.GetContent(x, y)
+	if !dirty || x >= s.physw || y >= s.physh {
 		return width
 	}
-	if x >= s.physw || y >= s.physh || x < 0 || y < 0 {
-		return width
-	}
-	simc := &s.front[(y*s.physw)+x]
 
+	simc := &s.front[(y*s.physw)+x]
 	if style == StyleDefault {
 		style = s.style
 	}
 	simc.Style = style
-	simc.Runes = append([]rune{mainc}, combc...)
-
-	// now emit runes - taking care to not overrun width with a
-	// wide character, and to ensure that we emit exactly one regular
-	// character followed up by any residual combing characters
-
-	simc.Bytes = nil
 
 	if x > s.physw-width {
 		simc.Runes = []rune{' '}
 		simc.Bytes = []byte{' '}
+		s.back.SetDirty(x, y, false)
 		return width
 	}
 
-	ubuf := make([]byte, 12)
-
-	for _, r := range simc.Runes {
-
-		l := utf8.EncodeRune(ubuf, r)
-		ubuf = ubuf[:l]
-
-		if ubuf[0] == '\x1a' {
-			// skip combining
-			if subst, ok := s.fallback[r]; ok {
-				simc.Bytes = append(simc.Bytes,
-					[]byte(subst)...)
-
-			} else if r >= ' ' && r <= '~' {
-				simc.Bytes = append(simc.Bytes, byte(r))
-
-			} else if simc.Bytes == nil {
-				simc.Bytes = append(simc.Bytes, '?')
-			}
-		} else {
-			simc.Bytes = append(simc.Bytes, ubuf...)
-		}
-	}
+	simc.Runes = append([]rune{mainc}, combc...)
+	simc.Bytes = make([]byte, 0, len(simc.Runes))
+	simc.Bytes = append(simc.Bytes, []byte(string(simc.Runes))...)
 	s.back.SetDirty(x, y, false)
 	return width
 }
