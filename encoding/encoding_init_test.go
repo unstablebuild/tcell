@@ -16,7 +16,7 @@ package encoding
 import (
 	"testing"
 
-	"github.com/ernestrc/tcell/v2"
+	"github.com/ernestrc/tcell/v3"
 )
 
 func TestGBK(t *testing.T) {

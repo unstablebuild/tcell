@@ -20,7 +20,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/ernestrc/tcell/v2"
+	"github.com/ernestrc/tcell/v3"
 	"os"
 )
 
