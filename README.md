@@ -1,5 +1,14 @@
 <img src="logos/tcell.png" style="float: right"/>
 
+# About this fork
+This fork started because we did not agree on the latest changes in the 
+gdamore/tcell repository. A lot of complexity has been added to support 
+esoteric use-cases such as WebAssembly.
+
+All the widget/view packages have been removed, the screen interface has been 
+simplified and refactored to better support event loops, resulting in improved 
+performance.
+
 # Tcell
 
 _Tcell_ is a _Go_ package that provides a cell based view for text terminals, like _XTerm_.
