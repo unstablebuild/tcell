@@ -712,8 +712,13 @@ func (t *tScreen) drawCell(x, y int) int {
 		return width
 	}
 
-	t.writeString(string(mainc))
-	t.writeString(string(combc))
+	var buf [6]byte
+	n := utf8.EncodeRune(buf[:], mainc)
+	t.writeDataBuffer(buf[:n])
+	for _, r := range combc {
+		n := utf8.EncodeRune(buf[:], r)
+		t.writeDataBuffer(buf[:n])
+	}
 
 	t.cx += width
 	t.cells.SetDirty(x, y, false)
@@ -768,6 +773,14 @@ func (t *tScreen) writeString(s string) {
 	} else {
 		_, _ = io.WriteString(t.tty, s)
 	}
+}
+
+func (t *tScreen) writeDataBuffer(data []byte) {
+	t.buf.Write(data)
+}
+
+func (t *tScreen) writeStringBuffer(str string) {
+	t.buf.WriteString(str)
 }
 
 func (t *tScreen) TPuts(s string) {
