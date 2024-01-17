@@ -232,6 +232,8 @@ type Terminfo struct {
 	SetWindowSize           string
 	EnableFocusReporting    string
 	DisableFocusReporting   string
+
+	pb paramsBuffer
 }
 
 const (
@@ -329,9 +331,8 @@ func (t *Terminfo) TParm(s string, p ...interface{}) string {
 	var ai, bi int
 	var dvars [26]string
 	var params [9]interface{}
-	var pb = &paramsBuffer{}
 
-	pb.Start(s)
+	t.pb.Start(s)
 
 	// make sure we always have 9 parameters -- makes it easier
 	// later to skip checks
@@ -349,19 +350,19 @@ func (t *Terminfo) TParm(s string, p ...interface{}) string {
 
 	for {
 
-		ch, err := pb.NextCh()
+		ch, err := t.pb.NextCh()
 		if err != nil {
 			break
 		}
 
 		if ch != '%' {
 			if skip == emit {
-				pb.PutCh(ch)
+				t.pb.PutCh(ch)
 			}
 			continue
 		}
 
-		ch, err = pb.NextCh()
+		ch, err = t.pb.NextCh()
 		if err != nil {
 			// XXX Error
 			break
@@ -380,7 +381,7 @@ func (t *Terminfo) TParm(s string, p ...interface{}) string {
 
 		switch ch {
 		case '%': // quoted %
-			pb.PutCh(ch)
+			t.pb.PutCh(ch)
 
 		case 'i': // increment both parameters (ANSI cup support)
 			if i, ok := params[0].(int); ok {
@@ -395,16 +396,16 @@ func (t *Terminfo) TParm(s string, p ...interface{}) string {
 			// efficiency.  They could be handled by the richer
 			// format support below, less efficiently.
 			a, stk = stk.PopString()
-			pb.PutString(a)
+			t.pb.PutString(a)
 
 		case 'c':
 			// Integer as special character.
 			ai, stk = stk.PopInt()
-			pb.PutCh(byte(ai))
+			t.pb.PutCh(byte(ai))
 
 		case 'd':
 			ai, stk = stk.PopInt()
-			pb.PutString(strconv.Itoa(ai))
+			t.pb.PutString(strconv.Itoa(ai))
 
 		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'x', 'X', 'o', ':':
 			// This is pretty suboptimal, but this is rarely used.
@@ -413,31 +414,31 @@ func (t *Terminfo) TParm(s string, p ...interface{}) string {
 			// executed outside test cases.
 			f := "%"
 			if ch == ':' {
-				ch, _ = pb.NextCh()
+				ch, _ = t.pb.NextCh()
 			}
 			f += string(ch)
 			for ch == '+' || ch == '-' || ch == '#' || ch == ' ' {
-				ch, _ = pb.NextCh()
+				ch, _ = t.pb.NextCh()
 				f += string(ch)
 			}
 			for (ch >= '0' && ch <= '9') || ch == '.' {
-				ch, _ = pb.NextCh()
+				ch, _ = t.pb.NextCh()
 				f += string(ch)
 			}
 			switch ch {
 			case 'd', 'x', 'X', 'o':
 				ai, stk = stk.PopInt()
-				pb.PutString(fmt.Sprintf(f, ai))
+				t.pb.PutString(fmt.Sprintf(f, ai))
 			case 's':
 				a, stk = stk.PopString()
-				pb.PutString(fmt.Sprintf(f, a))
+				t.pb.PutString(fmt.Sprintf(f, a))
 			case 'c':
 				ai, stk = stk.PopInt()
-				pb.PutString(fmt.Sprintf(f, ai))
+				t.pb.PutString(fmt.Sprintf(f, ai))
 			}
 
 		case 'p': // push parameter
-			ch, _ = pb.NextCh()
+			ch, _ = t.pb.NextCh()
 			ai = int(ch - '1')
 			if ai >= 0 && ai < len(params) {
 				stk = stk.Push(params[ai])
@@ -446,7 +447,7 @@ func (t *Terminfo) TParm(s string, p ...interface{}) string {
 			}
 
 		case 'P': // pop & store variable
-			ch, _ = pb.NextCh()
+			ch, _ = t.pb.NextCh()
 			if ch >= 'A' && ch <= 'Z' {
 				svars[int(ch-'A')], stk = stk.PopString()
 			} else if ch >= 'a' && ch <= 'z' {
@@ -454,7 +455,7 @@ func (t *Terminfo) TParm(s string, p ...interface{}) string {
 			}
 
 		case 'g': // recall & push variable
-			ch, _ = pb.NextCh()
+			ch, _ = t.pb.NextCh()
 			if ch >= 'A' && ch <= 'Z' {
 				stk = stk.Push(svars[int(ch-'A')])
 			} else if ch >= 'a' && ch <= 'z' {
@@ -462,17 +463,17 @@ func (t *Terminfo) TParm(s string, p ...interface{}) string {
 			}
 
 		case '\'': // push(char) - the integer value of it
-			ch, _ = pb.NextCh()
-			_, _ = pb.NextCh() // must be ' but we don't check
+			ch, _ = t.pb.NextCh()
+			_, _ = t.pb.NextCh() // must be ' but we don't check
 			stk = stk.Push(int(ch))
 
 		case '{': // push(int)
 			ai = 0
-			ch, _ = pb.NextCh()
+			ch, _ = t.pb.NextCh()
 			for ch >= '0' && ch <= '9' {
 				ai *= 10
 				ai += int(ch - '0')
-				ch, _ = pb.NextCh()
+				ch, _ = t.pb.NextCh()
 			}
 			// ch must be '}' but no verification
 			stk = stk.Push(ai)
@@ -567,11 +568,11 @@ func (t *Terminfo) TParm(s string, p ...interface{}) string {
 			skip = toEnd
 
 		default:
-			pb.PutString("%" + string(ch))
+			t.pb.PutString("%" + string(ch))
 		}
 	}
 
-	return pb.End()
+	return t.pb.End()
 }
 
 // TPuts emits the string to the writer, but expands inline padding
