@@ -233,7 +233,10 @@ type Terminfo struct {
 	EnableFocusReporting    string
 	DisableFocusReporting   string
 
-	pb paramsBuffer
+	pb     paramsBuffer
+	stk    stack
+	dvars  [26]string
+	params [9]interface{}
 }
 
 const (
@@ -326,11 +329,11 @@ func (pb *paramsBuffer) PutString(s string) {
 // evaluates the string, and returns the result with the parameter
 // applied.
 func (t *Terminfo) TParm(s string, p ...interface{}) string {
-	var stk stack
 	var a string
 	var ai, bi int
-	var dvars [26]string
-	var params [9]interface{}
+	params := t.params
+	dvars := t.dvars
+	stk := t.stk
 
 	t.pb.Start(s)
 
@@ -572,6 +575,7 @@ func (t *Terminfo) TParm(s string, p ...interface{}) string {
 		}
 	}
 
+	t.stk = stk[:0]
 	return t.pb.End()
 }
 
