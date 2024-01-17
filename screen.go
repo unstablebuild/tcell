@@ -80,49 +80,13 @@ type Screen interface {
 	// response to a call to Clear or Flush.
 	Size() (width, height int)
 
-	// ChannelEvents is an infinite loop that waits for an event and
-	// channels it into the user provided channel ch.  Closing the
-	// quit channel and calling the Fini method are cancellation
-	// signals.  When a cancellation signal is received the method
-	// returns after closing ch.
-	//
-	// This method should be used as a goroutine.
-	//
-	// NOTE: PollEvent should not be called while this method is running.
-	ChannelEvents(ch chan<- Event, quit <-chan struct{})
-
 	// Poll returns the underlying event channel.
 	Poll() <-chan Event
-
-	// PollEvent waits for events to arrive.  Main application loops
-	// must spin on this to prevent the application from stalling.
-	// Furthermore, this will return nil if the Screen is finalized.
-	PollEvent() Event
-
-	// HasPendingEvent returns true if PollEvent would return an event
-	// without blocking.  If the screen is stopped and PollEvent would
-	// return nil, then the return value from this function is unspecified.
-	// The purpose of this function is to allow multiple events to be collected
-	// at once, to minimize screen redraws.
-	HasPendingEvent() bool
 
 	// PostEvent tries to post an event into the event stream.  This
 	// can fail if the event queue is full.  In that case, the event
 	// is dropped, and ErrEventQFull is returned.
 	PostEvent(ev Event) error
-
-	// Deprecated: PostEventWait is unsafe, and will be removed
-	// in the future.
-	//
-	// PostEventWait is like PostEvent, but if the queue is full, it
-	// blocks until there is space in the queue, making delivery
-	// reliable.  However, it is VERY important that this function
-	// never be called from within whatever event loop is polling
-	// with PollEvent(), otherwise a deadlock may arise.
-	//
-	// For this reason, when using this function, the use of a
-	// Goroutine is recommended to ensure no deadlock can occur.
-	PostEventWait(ev Event)
 
 	// EnableMouse enables the mouse.  (If your terminal supports it.)
 	// If no flags are specified, then all events are reported, if the
@@ -241,6 +205,7 @@ type screenImpl interface {
 	Beep() error
 	Tty() (Tty, bool)
 	Poll() <-chan Event
+	PostEvent(ev Event) error
 
 	// Following methods are not part of the Screen api, but are used for interaction with
 	// the common layer code.
@@ -248,15 +213,6 @@ type screenImpl interface {
 	// GetCells returns a pointer to the underlying CellBuffer that the implementation uses.
 	// Various methods will write to these for performance, but will use the lock to do so.
 	GetCells() *CellBuffer
-
-	// StopQ is closed when the screen is shut down via Fini.  It remains open if the screen
-	// is merely suspended.
-	StopQ() <-chan struct{}
-
-	// EventQ delivers events.  Events are posted to this by the screen in response to
-	// key presses, resizes, etc.  Application code receives events from this via the
-	// Screen.PollEvent, Screen.ChannelEvents APIs.
-	EventQ() chan Event
 }
 
 type baseScreen struct {
@@ -278,57 +234,4 @@ func (b *baseScreen) SetContent(x, y int, mainc rune, combc []rune, width int, s
 
 func (b *baseScreen) GetContent(x, y int) (rune, []rune, Style, int, bool) {
 	return b.GetCells().GetContent(x, y)
-}
-
-func (b *baseScreen) Poll() <-chan Event {
-	return b.screenImpl.Poll()
-}
-
-func (b *baseScreen) ChannelEvents(ch chan<- Event, quit <-chan struct{}) {
-	defer close(ch)
-	for {
-		select {
-		case <-quit:
-			return
-		case <-b.StopQ():
-			return
-		case ev := <-b.EventQ():
-			select {
-			case <-quit:
-				return
-			case <-b.StopQ():
-				return
-			case ch <- ev:
-			}
-		}
-	}
-}
-
-func (b *baseScreen) PollEvent() Event {
-	select {
-	case <-b.StopQ():
-		return nil
-	case ev := <-b.EventQ():
-		return ev
-	}
-}
-
-func (b *baseScreen) HasPendingEvent() bool {
-	return len(b.EventQ()) > 0
-}
-
-func (b *baseScreen) PostEventWait(ev Event) {
-	select {
-	case b.EventQ() <- ev:
-	case <-b.StopQ():
-	}
-}
-
-func (b *baseScreen) PostEvent(ev Event) error {
-	select {
-	case b.EventQ() <- ev:
-		return nil
-	default:
-		return ErrEventQFull
-	}
 }

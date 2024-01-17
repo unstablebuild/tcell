@@ -418,7 +418,7 @@ func PollRawEvent(data []byte) Event {
 
 // PollEvent blocks until an event is ready, and then returns it.
 func PollEvent() Event {
-	ev := screen.PollEvent()
+	ev := <-screen.Poll()
 	return NewEvent(ev)
 }
 
@@ -457,15 +457,6 @@ func PublishEvent(ev Event) bool {
 	}
 	err := screen.PostEvent(tev)
 	return err != tcell.ErrEventQFull
-}
-
-// HasPendingEvent returns true if PollEvent would return an event
-// without blocking.  If the screen is stopped and PollEvent would
-// return nil, then the return value from this function is unspecified.
-// The purpose of this function is to allow multiple events to be collected
-// at once, to minimize screen redraws.
-func HasPendingEvent() bool {
-	return screen.HasPendingEvent()
 }
 
 // Screen exposes the underlying tcell.Screen.

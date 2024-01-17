@@ -170,7 +170,7 @@ func main() {
 
 		s.Show()
 		bstr = ""
-		ev := s.PollEvent()
+		ev := <-s.Poll()
 		st := tcell.StyleDefault.Background(tcell.ColorRed)
 		up := tcell.StyleDefault.
 			Background(tcell.ColorBlue).

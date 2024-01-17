@@ -258,26 +258,6 @@ func (s *simscreen) Colors() int {
 	return 256
 }
 
-func (s *simscreen) ChannelEvents(ch chan<- Event, quit <-chan struct{}) {
-	defer close(ch)
-	for {
-		select {
-		case <-quit:
-			return
-		case <-s.quit:
-			return
-		case ev := <-s.evch:
-			select {
-			case <-quit:
-				return
-			case <-s.quit:
-				return
-			case ch <- ev:
-			}
-		}
-	}
-}
-
 func (s *simscreen) PollEvent() Event {
 	select {
 	case <-s.quit:
@@ -289,10 +269,6 @@ func (s *simscreen) PollEvent() Event {
 
 func (s *simscreen) Poll() <-chan Event {
 	return s.evch
-}
-
-func (s *simscreen) HasPendingEvent() bool {
-	return len(s.evch) > 0
 }
 
 func (s *simscreen) PostEventWait(ev Event) {

@@ -463,7 +463,7 @@ func (t *wScreen) GetCells() *CellBuffer {
 	return &t.cells
 }
 
-func (t *wScreen) EventQ() chan Event {
+func (t *wScreen) Poll() <-chan Event {
 	return t.evch
 }
 

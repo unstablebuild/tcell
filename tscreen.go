@@ -968,41 +968,8 @@ func (t *tScreen) nColors() int {
 	return t.ti.Colors
 }
 
-func (t *tScreen) ChannelEvents(ch chan<- Event, quit <-chan struct{}) {
-	defer close(ch)
-	for {
-		select {
-		case <-quit:
-			return
-		case <-t.quit:
-			return
-		case ev := <-t.eventQ:
-			select {
-			case <-quit:
-				return
-			case <-t.quit:
-				return
-			case ch <- ev:
-			}
-		}
-	}
-}
-
 func (t *tScreen) Poll() <-chan Event {
 	return t.eventQ
-}
-
-func (t *tScreen) PollEvent() Event {
-	select {
-	case <-t.quit:
-		return nil
-	case ev := <-t.eventQ:
-		return ev
-	}
-}
-
-func (t *tScreen) HasPendingEvent() bool {
-	return len(t.eventQ) > 0
 }
 
 // vtACSNames is a map of bytes defined by terminfo that are used in
@@ -1050,22 +1017,6 @@ var vtACSNames = map[byte]rune{
 	'|': RuneNEqual,
 	'}': RuneSterling,
 	'~': RuneBullet,
-}
-
-func (t *tScreen) PostEventWait(ev Event) {
-	select {
-	case t.eventQ <- ev:
-	case <-t.quit:
-	}
-}
-
-func (t *tScreen) PostEvent(ev Event) error {
-	select {
-	case t.eventQ <- ev:
-		return nil
-	default:
-		return ErrEventQFull
-	}
 }
 
 func (t *tScreen) clip(x, y int) (int, int) {
@@ -1704,12 +1655,13 @@ func (t *tScreen) finalize() {
 	_ = t.tty.Close()
 }
 
-func (t *tScreen) StopQ() <-chan struct{} {
-	return t.stopQ
-}
-
-func (t *tScreen) EventQ() chan Event {
-	return t.eventQ
+func (t *tScreen) PostEvent(ev Event) error {
+	select {
+	case t.eventQ <- ev:
+		return nil
+	default:
+		return ErrEventQFull
+	}
 }
 
 func (t *tScreen) GetCells() *CellBuffer {

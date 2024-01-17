@@ -162,7 +162,7 @@ func main() {
 	displaySixel(s, img, lock)
 
 	for {
-		switch ev := s.PollEvent().(type) {
+		switch ev := <-s.Poll().(type) {
 		case *tcell.EventResize:
 			displayHelloWorld(s)
 			displaySixel(s, img, lock)

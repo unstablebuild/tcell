@@ -69,7 +69,7 @@ func main() {
 	displayHelloWorld(s)
 
 	for {
-		switch ev := s.PollEvent().(type) {
+		switch ev := <-s.Poll().(type) {
 		case *tcell.EventResize:
 			displayHelloWorld(s)
 		case *tcell.EventKey:

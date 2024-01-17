@@ -21,7 +21,7 @@ import (
 
 func eventLoop(s Screen, evch chan Event) {
 	for {
-		ev := s.PollEvent()
+		ev := <-s.Poll()
 		if ev == nil {
 			close(evch)
 			return
@@ -55,45 +55,6 @@ func TestMouseEvents(t *testing.T) {
 			continue
 		case <-time.After(time.Second):
 			done = true
-		}
-	}
-
-	if x, y := em.Position(); x != 4 || y != 9 {
-		t.Errorf("Mouse position wrong (%v, %v)", x, y)
-	}
-	if em.Buttons() != Button1 {
-		t.Errorf("Should be Button1")
-	}
-	if em.Modifiers() != ModCtrl {
-		t.Errorf("Modifiers should be control")
-	}
-}
-
-func TestChannelMouseEvents(t *testing.T) {
-
-	s := mkTestScreen(t)
-	defer s.Fini()
-
-	s.EnableMouse()
-	s.InjectMouse(4, 9, Button1, ModCtrl)
-	evch := make(chan Event)
-	quit := make(chan struct{})
-	em := new(EventMouse)
-	go s.ChannelEvents(evch, quit)
-
-loop:
-	for {
-		select {
-		case ev := <-evch:
-			if evm, ok := ev.(*EventMouse); ok {
-				em = evm
-				close(quit)
-				break loop
-			}
-			continue
-		case <-time.After(time.Second):
-			close(quit)
-			break loop
 		}
 	}
 
