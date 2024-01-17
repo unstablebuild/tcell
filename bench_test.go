@@ -147,6 +147,10 @@ func makeBox(s Screen, i int) {
 	st = st.Reverse(i%2 == 0)
 	gl = glyphs[i%len(glyphs)]
 
+	if i%5 != 0 {
+		st.Foreground(Color(i)%(ColorYellowGreen-ColorValid) + ColorValid)
+	}
+
 	for row := 0; row < lh; row++ {
 		for col := 0; col < lw; col++ {
 			s.SetContent(lx+col, ly+row, gl, nil, 1, st)
