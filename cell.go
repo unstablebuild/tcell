@@ -149,18 +149,20 @@ func (cb *CellBuffer) Resize(w, h int) {
 // If either the foreground or background are ColorNone, then the respective
 // color is unchanged.
 func (cb *CellBuffer) Fill(r rune, style Style) {
+	if style.fg == ColorNone && style.bg == ColorNone {
+		for i := range cb.cells {
+			c := &cb.cells[i]
+			c.currMain = r
+			c.currComb = nil
+			c.width = 1
+		}
+		return
+	}
 	for i := range cb.cells {
 		c := &cb.cells[i]
 		c.currMain = r
 		c.currComb = nil
-		cs := style
-		if cs.fg == ColorNone {
-			cs.fg = c.currStyle.fg
-		}
-		if cs.bg == ColorNone {
-			cs.bg = c.currStyle.bg
-		}
-		c.currStyle = cs
+		c.currStyle = style
 		c.width = 1
 	}
 }
