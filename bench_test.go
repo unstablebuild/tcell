@@ -80,7 +80,7 @@ func benchmarkTscreen(b *testing.B, resize bool, width, height int) {
 		b.Fatalf("lookup term info: %v", err)
 	}
 	s := tScreen{tty: &tty, ti: ti}
-	bs := baseScreen{&s}
+	bs := baseScreen{&s, s.GetCells()}
 	if err := s.Init(); err != nil {
 		b.Fatalf("Init screen: %v", err)
 	}

@@ -22,7 +22,7 @@ import (
 // SimulationScreen is also a Screen.
 func NewSimulationScreen() SimulationScreen {
 	ss := &simscreen{}
-	ss.Screen = &baseScreen{screenImpl: ss}
+	ss.Screen = &baseScreen{screenImpl: ss, cb: ss.GetCells()}
 	return ss
 }
 

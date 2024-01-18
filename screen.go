@@ -206,17 +206,11 @@ type screenImpl interface {
 	Tty() (Tty, bool)
 	Poll() <-chan Event
 	PostEvent(ev Event) error
-
-	// Following methods are not part of the Screen api, but are used for interaction with
-	// the common layer code.
-
-	// GetCells returns a pointer to the underlying CellBuffer that the implementation uses.
-	// Various methods will write to these for performance, but will use the lock to do so.
-	GetCells() *CellBuffer
 }
 
 type baseScreen struct {
 	screenImpl
+	cb *CellBuffer
 }
 
 func (b *baseScreen) Clear() {
@@ -224,14 +218,13 @@ func (b *baseScreen) Clear() {
 }
 
 func (b *baseScreen) Fill(r rune, style Style) {
-	cb := b.GetCells()
-	cb.Fill(r, style)
+	b.cb.Fill(r, style)
 }
 
 func (b *baseScreen) SetContent(x, y int, mainc rune, combc []rune, width int, st Style) {
-	b.GetCells().SetContentWidth(x, y, mainc, combc, width, st)
+	b.cb.SetContentWidth(x, y, mainc, combc, width, st)
 }
 
 func (b *baseScreen) GetContent(x, y int) (rune, []rune, Style, int, bool) {
-	return b.GetCells().GetContent(x, y)
+	return b.cb.GetContent(x, y)
 }

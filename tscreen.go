@@ -88,7 +88,7 @@ func NewTerminfoScreenFromTtyTerminfo(tty Tty, ti *terminfo.Terminfo) (s Screen,
 		t.mouse = []byte(ti.Mouse)
 	}
 	t.prepareKeys()
-	return &baseScreen{screenImpl: t}, nil
+	return &baseScreen{screenImpl: t, cb: t.GetCells()}, nil
 }
 
 // NewTerminfoScreenFromTty returns a Screen using a custom Tty implementation.
