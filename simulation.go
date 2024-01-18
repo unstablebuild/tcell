@@ -149,14 +149,14 @@ func (s *simscreen) drawCell(x, y int) int {
 	if x > s.physw-width {
 		simc.Runes = []rune{' '}
 		simc.Bytes = []byte{' '}
-		s.back.SetDirty(x, y, false)
+		s.back.ClearDirty(x, y)
 		return width
 	}
 
 	simc.Runes = append([]rune{mainc}, combc...)
 	simc.Bytes = make([]byte, 0, len(simc.Runes))
 	simc.Bytes = append(simc.Bytes, []byte(string(simc.Runes))...)
-	s.back.SetDirty(x, y, false)
+	s.back.ClearDirty(x, y)
 	return width
 }
 

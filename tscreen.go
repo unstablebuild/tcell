@@ -654,7 +654,7 @@ func (t *tScreen) drawCell(x, y int) int {
 			t.TPuts(ti.InsertChar)
 			t.cy = y
 			t.cx = x - 1
-			t.cells.SetDirty(x-1, y, true)
+			t.cells.SetDirty(x-1, y)
 			_ = t.drawCell(x-1, y)
 			t.TPuts(t.ti.TGoto(0, 0))
 			t.cy = 0
@@ -708,7 +708,7 @@ func (t *tScreen) drawCell(x, y int) int {
 		width = 1
 		t.writeStringBuffer(" ")
 		t.cx += width
-		t.cells.SetDirty(x, y, false)
+		t.cells.ClearDirty(x, y)
 		return width
 	}
 
@@ -721,7 +721,7 @@ func (t *tScreen) drawCell(x, y int) int {
 	}
 
 	t.cx += width
-	t.cells.SetDirty(x, y, false)
+	t.cells.ClearDirty(x, y)
 	if width > 1 {
 		t.cx = -1
 	}
@@ -827,7 +827,7 @@ func (t *tScreen) draw() {
 					// this is necessary so that if we ever
 					// go back to drawing that cell, we
 					// actually will re-draw it.
-					t.cells.SetDirty(x+i, y, true)
+					t.cells.SetDirty(x+i, y)
 				}
 				x += width - 1
 			}

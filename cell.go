@@ -52,7 +52,7 @@ func (cb *CellBuffer) SetContentWidth(x int, y int,
 	c.currStyle = style
 
 	for i := 1; i < width; i++ {
-		cb.SetDirty(x+i, y, true)
+		cb.SetDirty(x+i, y)
 	}
 }
 
@@ -101,21 +101,19 @@ func (cb *CellBuffer) dirty(c *cell) bool {
 		len(c.lastComb) != len(c.currComb)
 }
 
-// SetDirty is normally used to indicate that a cell has
-// been displayed (in which case dirty is false), or to manually
+// SetDirty is normally used to manually
 // force a cell to be marked dirty.
-func (cb *CellBuffer) SetDirty(x, y int, dirty bool) {
+func (cb *CellBuffer) SetDirty(x, y int) {
+	cb.cells[(y*cb.w)+x].lastMain = 0
+}
+
+// ClearDirty is normally used to indicate that a cell has
+// been displayed.
+func (cb *CellBuffer) ClearDirty(x, y int) {
 	c := &cb.cells[(y*cb.w)+x]
-	if dirty {
-		c.lastMain = rune(0)
-	} else {
-		if c.currMain == rune(0) {
-			c.currMain = ' '
-		}
-		c.lastMain = c.currMain
-		c.lastComb = c.currComb
-		c.lastStyle = c.currStyle
-	}
+	c.lastMain = c.currMain
+	c.lastComb = c.currComb
+	c.lastStyle = c.currStyle
 }
 
 // Resize is used to resize the cells array, with different dimensions,
