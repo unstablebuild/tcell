@@ -139,13 +139,12 @@ func AttributeToStyle(fg, bg Attribute) tcell.Style {
 
 // Clear clears the screen with the given attributes.
 func Clear(fg, bg Attribute) {
-	st := AttributeToStyle(fg, bg)
-	w, h := screen.Size()
-	for row := 0; row < h; row++ {
-		for col := 0; col < w; col++ {
-			screen.SetContent(col, row, ' ', nil, 1, st)
-		}
+	if fg == 0 && bg == 0 {
+		screen.Clear()
+		return
 	}
+	st := AttributeToStyle(fg, bg)
+	screen.Fill(' ', st)
 }
 
 // InputMode is not used.

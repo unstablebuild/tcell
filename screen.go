@@ -214,7 +214,7 @@ type baseScreen struct {
 }
 
 func (b *baseScreen) Clear() {
-	b.Fill(' ', StyleDefault)
+	b.cb.Fill(' ', StyleDefault)
 }
 
 func (b *baseScreen) Fill(r rune, style Style) {

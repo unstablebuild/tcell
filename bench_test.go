@@ -55,7 +55,7 @@ func benchmarkSimulation(b *testing.B, resize bool, width, height int) {
 	// simulate termbox event loop
 	if !resize {
 		for i := 0; i < b.N; i++ {
-			clear(s)
+			s.Clear()
 			makeBox(s, i)
 			s.Show()
 		}
@@ -66,7 +66,7 @@ func benchmarkSimulation(b *testing.B, resize bool, width, height int) {
 			} else if i%5 == 0 {
 				s.SetSize(width, height)
 			}
-			clear(s)
+			s.Clear()
 			makeBox(s, i)
 			s.Show()
 		}
@@ -110,7 +110,7 @@ func benchmarkTscreen(b *testing.B, resize bool, width, height int) {
 	// simulate termbox event loop
 	if !resize {
 		for i := 0; i < b.N; i++ {
-			clear(&bs)
+			bs.Clear()
 			makeBox(&bs, i)
 			s.Show()
 		}
@@ -122,7 +122,7 @@ func benchmarkTscreen(b *testing.B, resize bool, width, height int) {
 				tty.setWindowSize(width, height)
 			}
 			s.resize()
-			clear(&bs)
+			bs.Clear()
 			makeBox(&bs, i)
 			s.Show()
 		}
@@ -154,15 +154,6 @@ func makeBox(s Screen, i int) {
 	for row := 0; row < lh; row++ {
 		for col := 0; col < lw; col++ {
 			s.SetContent(lx+col, ly+row, gl, nil, 1, st)
-		}
-	}
-}
-
-func clear(s Screen) {
-	w, h := s.Size()
-	for row := 0; row < h; row++ {
-		for col := 0; col < w; col++ {
-			s.SetContent(col, row, ' ', nil, 1, StyleDefault)
 		}
 	}
 }

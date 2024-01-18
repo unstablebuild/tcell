@@ -706,7 +706,7 @@ func (t *tScreen) drawCell(x, y int) int {
 
 	if x+width > t.w {
 		width = 1
-		t.writeString(" ")
+		t.writeStringBuffer(" ")
 		t.cx += width
 		t.cells.SetDirty(x, y, false)
 		return width
@@ -767,12 +767,8 @@ func (t *tScreen) showCursor() {
 // TPuts. If the screen is "buffering", the string is collected in a buffer,
 // with the intention that the entire buffer be sent to the terminal in one
 // write operation at some point later.
-func (t *tScreen) writeString(s string) {
-	if t.buffering {
-		_, _ = io.WriteString(&t.buf, s)
-	} else {
-		_, _ = io.WriteString(t.tty, s)
-	}
+func (t *tScreen) writeStringTty(s string) {
+	io.WriteString(t.tty, s)
 }
 
 func (t *tScreen) writeDataBuffer(data []byte) {
@@ -798,13 +794,6 @@ func (t *tScreen) Show() {
 	t.draw()
 }
 
-func (t *tScreen) clearScreen() {
-	t.TPuts(t.ti.AttrOff)
-	fg, bg, _ := t.style.Decompose()
-	_ = t.sendFgBg(fg, bg, AttrNone)
-	t.TPuts(t.ti.Clear)
-}
-
 func (t *tScreen) hideCursor() {
 	// does not update cursor position
 	if t.ti.HideCursor != "" {
@@ -826,9 +815,6 @@ func (t *tScreen) draw() {
 
 	t.buf.Reset()
 	t.buffering = true
-	defer func() {
-		t.buffering = false
-	}()
 
 	// hide the cursor while we move stuff around
 	t.hideCursor()
@@ -852,6 +838,7 @@ func (t *tScreen) draw() {
 	t.showCursor()
 
 	_, _ = t.buf.WriteTo(t.tty)
+	t.buffering = false
 }
 
 func (t *tScreen) EnableMouse(flags ...MouseFlags) {
@@ -1657,7 +1644,7 @@ func (t *tScreen) disengage() {
 
 // Beep emits a beep to the terminal.
 func (t *tScreen) Beep() error {
-	t.writeString(string(byte(7)))
+	t.writeStringTty(string(byte(7)))
 	return nil
 }
 
