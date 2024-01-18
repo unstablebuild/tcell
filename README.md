@@ -1,13 +1,43 @@
 <img src="logos/tcell.png" style="float: right"/>
 
 # About this fork
-This fork started because we did not agree on the latest changes in the 
-gdamore/tcell repository. A lot of complexity has been added to support 
-esoteric use-cases such as WebAssembly.
+This fork started because we did not agree on the latest changes in the gdamore/tcell repository.
+A lot of complexity has been added to support esoteric use-cases such as WebAssembly.
 
 All the widget/view packages have been removed, the screen interface has been 
-simplified and refactored to better support event loops, resulting in improved 
-performance.
+simplified and refactored to better support event loops (lock-free, reduced allocations per render),
+resulting in improved performance.
+
+From the start of the optimizations (7bf539846adad20240bd27c00d5d572b77a837c2) up until the
+last optimization (63a05156dad11c91c4f4416fd4ddacc791a06303),
+the impact is quite severe, which yields a much more lightweight TUI backend.
+
+```
+benchmark                                                 old ns/op     new ns/op     delta
+BenchmarkIntegration/tscreen_large-10                     24609195      3092684       -87.43%
+BenchmarkIntegration/tscreen_medium-10                    4157143       127196        -96.94%
+BenchmarkIntegration/tscreen_small-10                     738193        15411         -97.91%
+BenchmarkIntegration/tscreen_large_with_resize-10         20727947      4697911       -77.34%
+BenchmarkIntegration/tscreen_medium_with_resize-10        3812498       204767        -94.63%
+BenchmarkIntegration/tscreen_small_with_resize-10         784257        30442         -96.12%
+
+benchmark                                                 old allocs     new allocs     delta
+BenchmarkIntegration/tscreen_large-10                     17026          705            -95.86%
+BenchmarkIntegration/tscreen_medium-10                    2666           48             -98.20%
+BenchmarkIntegration/tscreen_small-10                     392            7              -98.21%
+BenchmarkIntegration/tscreen_large_with_resize-10         201406         821            -99.59%
+BenchmarkIntegration/tscreen_medium_with_resize-10        10149          60             -99.41%
+BenchmarkIntegration/tscreen_small_with_resize-10         1322           12             -99.09%
+
+benchmark                                                 old bytes     new bytes     delta
+BenchmarkIntegration/tscreen_large-10                     193388        16608         -91.41%
+BenchmarkIntegration/tscreen_medium-10                    34453         809           -97.65%
+BenchmarkIntegration/tscreen_small-10                     5628          116           -97.94%
+BenchmarkIntegration/tscreen_large_with_resize-10         20641513      11735779      -43.14%
+BenchmarkIntegration/tscreen_medium_with_resize-10        877501        485473        -44.68%
+BenchmarkIntegration/tscreen_small_with_resize-10         108737        59985         -44.83%
+
+```
 
 # Tcell
 
