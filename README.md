@@ -9,33 +9,33 @@ simplified and refactored to better support event loops (lock-free, reduced allo
 resulting in improved performance.
 
 From the start of the optimizations (7bf539846adad20240bd27c00d5d572b77a837c2) up until the
-last optimization (63a05156dad11c91c4f4416fd4ddacc791a06303),
+last optimization (c38ded0df481f83ebbc9fa0838fde95e3a11857c),
 the impact is quite severe, which yields a much more lightweight TUI backend.
 
 ```
 benchmark                                                 old ns/op     new ns/op     delta
-BenchmarkIntegration/tscreen_large-10                     24609195      3092684       -87.43%
-BenchmarkIntegration/tscreen_medium-10                    4157143       127196        -96.94%
-BenchmarkIntegration/tscreen_small-10                     738193        15411         -97.91%
-BenchmarkIntegration/tscreen_large_with_resize-10         20727947      4697911       -77.34%
-BenchmarkIntegration/tscreen_medium_with_resize-10        3812498       204767        -94.63%
-BenchmarkIntegration/tscreen_small_with_resize-10         784257        30442         -96.12%
+BenchmarkIntegration/tscreen_large-10                     22075794      1907189       -91.36%
+BenchmarkIntegration/tscreen_medium-10                    3347864       88311         -97.36%
+BenchmarkIntegration/tscreen_small-10                     446367        10658         -97.61%
+BenchmarkIntegration/tscreen_large_with_resize-10         19868033      3121991       -84.29%
+BenchmarkIntegration/tscreen_medium_with_resize-10        4043734       136762        -96.62%
+BenchmarkIntegration/tscreen_small_with_resize-10         723866        22815         -96.85%
 
 benchmark                                                 old allocs     new allocs     delta
-BenchmarkIntegration/tscreen_large-10                     17026          705            -95.86%
-BenchmarkIntegration/tscreen_medium-10                    2666           48             -98.20%
-BenchmarkIntegration/tscreen_small-10                     392            7              -98.21%
-BenchmarkIntegration/tscreen_large_with_resize-10         201406         821            -99.59%
-BenchmarkIntegration/tscreen_medium_with_resize-10        10149          60             -99.41%
-BenchmarkIntegration/tscreen_small_with_resize-10         1322           12             -99.09%
+BenchmarkIntegration/tscreen_large-10                     17570          0              -100.00%
+BenchmarkIntegration/tscreen_medium-10                    2815           0              -100.00%
+BenchmarkIntegration/tscreen_small-10                     398            0              -100.00%
+BenchmarkIntegration/tscreen_large_with_resize-10         198972         0              -100.00%
+BenchmarkIntegration/tscreen_medium_with_resize-10        10541          0              -100.00%
+BenchmarkIntegration/tscreen_small_with_resize-10         1329           0              -100.00%
 
 benchmark                                                 old bytes     new bytes     delta
-BenchmarkIntegration/tscreen_large-10                     193388        16608         -91.41%
-BenchmarkIntegration/tscreen_medium-10                    34453         809           -97.65%
-BenchmarkIntegration/tscreen_small-10                     5628          116           -97.94%
-BenchmarkIntegration/tscreen_large_with_resize-10         20641513      11735779      -43.14%
-BenchmarkIntegration/tscreen_medium_with_resize-10        877501        485473        -44.68%
-BenchmarkIntegration/tscreen_small_with_resize-10         108737        59985         -44.83%
+BenchmarkIntegration/tscreen_large-10                     200315        3130          -98.44%
+BenchmarkIntegration/tscreen_medium-10                    34947         145           -99.59%
+BenchmarkIntegration/tscreen_small-10                     5556          20            -99.64%
+BenchmarkIntegration/tscreen_large_with_resize-10         20368081      9569687       -53.02%
+BenchmarkIntegration/tscreen_medium_with_resize-10        878374        388256        -55.80%
+BenchmarkIntegration/tscreen_small_with_resize-10         109314        48380         -55.74%
 
 ```
 
