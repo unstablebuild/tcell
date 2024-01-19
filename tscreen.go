@@ -964,6 +964,7 @@ func (t *tScreen) resize() {
 	t.cells.Invalidate()
 	t.h = ws.Height
 	t.w = ws.Width
+	t.buf.Grow(t.h*t.w*6 + t.h*t.w*100)
 }
 
 func (t *tScreen) Colors() int {
