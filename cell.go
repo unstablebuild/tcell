@@ -37,7 +37,8 @@ type CellBuffer struct {
 }
 
 // SetContentWidth behaves like SetContent, but allows clients
-// to pass the grapheme width if known.
+// to pass the grapheme width if known. The behaviour is undefined
+// if the passed width is ever 0.
 func (cb *CellBuffer) SetContentWidth(x int, y int,
 	mainc rune, combc []rune, width int, style Style,
 ) {
@@ -77,17 +78,18 @@ func (cb *CellBuffer) GetCell(x, y int) *Cell {
 func (cb *CellBuffer) ProcessCell(c *Cell) (
 	mainc rune, combc []rune, style Style, width int,
 ) {
-	mainc, combc, style, width = c.currMain, c.currComb, c.currStyle, c.width
-	// it is imperative that width is never 0 or otherwise
-	// SetContent next cell calculations might fail
+	mainc = c.currMain
+	combc = c.currComb
+	style = c.currStyle
+	width = c.width
 	if width == 0 || mainc < ' ' {
 		width = 1
 		mainc = ' '
 		// no need to reset combc on mainc < ' '
 		// as it is only useful for cells that were not set
-		// combc = nil
+		// and those will not have a combc set.
 	}
-	return mainc, combc, style, width
+	return
 }
 
 func (cb *CellBuffer) getCells() []Cell {
@@ -152,17 +154,6 @@ func (cb *CellBuffer) Resize(w, h int) {
 	}
 
 	newc := make([]Cell, w*h)
-	for y := 0; y < h && y < cb.h; y++ {
-		for x := 0; x < w && x < cb.w; x++ {
-			oc := &cb.cells[(y*cb.w)+x]
-			nc := &newc[(y*w)+x]
-			nc.currMain = oc.currMain
-			nc.currComb = oc.currComb
-			nc.currStyle = oc.currStyle
-			nc.width = oc.width
-			nc.lastMain = rune(0)
-		}
-	}
 	cb.cells = newc
 	cb.h = h
 	cb.w = w
