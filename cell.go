@@ -21,7 +21,6 @@ type Cell struct {
 	currStyle Style
 	lastMain  rune
 	lastStyle Style
-	lastComb  []rune
 	width     int
 }
 
@@ -84,7 +83,9 @@ func (cb *CellBuffer) ProcessCell(c *Cell) (
 	if width == 0 || mainc < ' ' {
 		width = 1
 		mainc = ' '
-		combc = nil
+		// no need to reset combc on mainc < ' '
+		// as it is only useful for cells that were not set
+		// combc = nil
 	}
 	return mainc, combc, style, width
 }
@@ -118,8 +119,10 @@ func (cb *CellBuffer) DirtyAt(x, y int) bool {
 func (cb *CellBuffer) Dirty(c *Cell) bool {
 	return c.lastMain == rune(0) ||
 		c.lastMain != c.currMain ||
-		c.lastStyle != c.currStyle ||
-		len(c.lastComb) != len(c.currComb)
+		c.lastStyle != c.currStyle
+	// we don't clear dirty when width > 1
+	// so there's no need to check for this
+	// len(c.lastComb) != len(c.currComb)
 }
 
 // SetDirty is normally used to manually
@@ -142,8 +145,9 @@ func (cb *CellBuffer) ClearDirty(x, y int) {
 // ClearDirty marks the given Cell as not dirty.
 func ClearDirty(c *Cell) {
 	c.lastMain = c.currMain
-	c.lastComb = c.currComb
 	c.lastStyle = c.currStyle
+	// no need to copy currComb as this
+	// should never be called for multi-width cells.
 }
 
 // Resize is used to resize the cells array, with different dimensions,
