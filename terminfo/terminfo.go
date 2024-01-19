@@ -234,9 +234,9 @@ type Terminfo struct {
 	DisableFocusReporting   string
 
 	pb      paramsBuffer
-	stk     stack
+	stk     stack[int]
+	stkstr  stack[string]
 	dvars   [26]string
-	params  [9]interface{}
 	gotobuf []byte
 }
 
@@ -245,47 +245,26 @@ const (
 	ModifiersXTerm = 1
 )
 
-type stack []interface{}
+type stack[T any] []T
 
-func (st stack) Push(v interface{}) stack {
-	if b, ok := v.(bool); ok {
-		if b {
-			return append(st, 1)
-		} else {
-			return append(st, 0)
-		}
-	}
+func (st stack[T]) Push(v T) stack[T] {
 	return append(st, v)
 }
 
-func (st stack) PopString() (string, stack) {
-	if len(st) > 0 {
-		e := st[len(st)-1]
-		var s string
-		switch v := e.(type) {
-		case int:
-			s = strconv.Itoa(v)
-		case string:
-			s = v
-		}
-		return s, st[:len(st)-1]
+func PushBool(stk stack[int], v bool) stack[int] {
+	if v {
+		return append(stk, 1)
 	}
-	return "", st
-
+	return append(stk, 0)
 }
-func (st stack) PopInt() (int, stack) {
+
+func (st stack[T]) Pop() (ret T, stkk stack[T]) {
 	if len(st) > 0 {
 		e := st[len(st)-1]
-		var i int
-		switch v := e.(type) {
-		case int:
-			i = v
-		case string:
-			i, _ = strconv.Atoi(v)
-		}
-		return i, st[:len(st)-1]
+		return e, st[:len(st)-1]
 	}
-	return 0, st
+	stkk = st
+	return
 }
 
 // static vars
@@ -333,20 +312,14 @@ func (pb *paramsBuffer) Put(data []byte) {
 // TParm takes a terminfo parameterized string, such as setaf or cup, and
 // evaluates the string, and returns the result with the parameter
 // applied.
-func (t *Terminfo) TParm(s string, p ...interface{}) []byte {
+func (t *Terminfo) TParm(s string, p []int) []byte {
 	var a string
 	var ai, bi int
-	params := t.params
 	dvars := t.dvars
 	stk := t.stk
+	stkstr := t.stkstr
 
 	t.pb.Start(s)
-
-	// make sure we always have 9 parameters -- makes it easier
-	// later to skip checks
-	for i := 0; i < len(params) && i < len(p); i++ {
-		params[i] = p[i]
-	}
 
 	const (
 		emit = iota
@@ -392,27 +365,25 @@ func (t *Terminfo) TParm(s string, p ...interface{}) []byte {
 			t.pb.PutCh(ch)
 
 		case 'i': // increment both parameters (ANSI cup support)
-			if i, ok := params[0].(int); ok {
-				params[0] = i + 1
-			}
-			if i, ok := params[1].(int); ok {
-				params[1] = i + 1
+			if len(p) > 1 {
+				p[0] += 1
+				p[1] += 1
 			}
 
 		case 's':
 			// NB: 's', 'c', and 'd' below are special cased for
 			// efficiency.  They could be handled by the richer
 			// format support below, less efficiently.
-			a, stk = stk.PopString()
+			a, stkstr = stkstr.Pop()
 			t.pb.PutString(a)
 
 		case 'c':
 			// Integer as special character.
-			ai, stk = stk.PopInt()
+			ai, stk = stk.Pop()
 			t.pb.PutCh(byte(ai))
 
 		case 'd':
-			ai, stk = stk.PopInt()
+			ai, stk = stk.Pop()
 			// this happens a lot due to TGoto being called for every cell on the screen
 			t.gotobuf = strconv.AppendInt(t.gotobuf, int64(ai), 10)
 			t.pb.Put(t.gotobuf)
@@ -438,21 +409,21 @@ func (t *Terminfo) TParm(s string, p ...interface{}) []byte {
 			}
 			switch ch {
 			case 'd', 'x', 'X', 'o':
-				ai, stk = stk.PopInt()
+				ai, stk = stk.Pop()
 				t.pb.PutString(fmt.Sprintf(f, ai))
 			case 's':
-				a, stk = stk.PopString()
+				a, stkstr = stkstr.Pop()
 				t.pb.PutString(fmt.Sprintf(f, a))
 			case 'c':
-				ai, stk = stk.PopInt()
+				ai, stk = stk.Pop()
 				t.pb.PutString(fmt.Sprintf(f, ai))
 			}
 
 		case 'p': // push parameter
 			ch, _ = t.pb.NextCh()
 			ai = int(ch - '1')
-			if ai >= 0 && ai < len(params) {
-				stk = stk.Push(params[ai])
+			if ai >= 0 && ai < len(p) {
+				stk = stk.Push(p[ai])
 			} else {
 				stk = stk.Push(0)
 			}
@@ -460,17 +431,17 @@ func (t *Terminfo) TParm(s string, p ...interface{}) []byte {
 		case 'P': // pop & store variable
 			ch, _ = t.pb.NextCh()
 			if ch >= 'A' && ch <= 'Z' {
-				svars[int(ch-'A')], stk = stk.PopString()
+				svars[int(ch-'A')], stkstr = stkstr.Pop()
 			} else if ch >= 'a' && ch <= 'z' {
-				dvars[int(ch-'a')], stk = stk.PopString()
+				dvars[int(ch-'a')], stkstr = stkstr.Pop()
 			}
 
 		case 'g': // recall & push variable
 			ch, _ = t.pb.NextCh()
 			if ch >= 'A' && ch <= 'Z' {
-				stk = stk.Push(svars[int(ch-'A')])
+				stkstr = stkstr.Push(svars[int(ch-'A')])
 			} else if ch >= 'a' && ch <= 'z' {
-				stk = stk.Push(dvars[int(ch-'a')])
+				stkstr = stkstr.Push(dvars[int(ch-'a')])
 			}
 
 		case '\'': // push(char) - the integer value of it
@@ -490,27 +461,27 @@ func (t *Terminfo) TParm(s string, p ...interface{}) []byte {
 			stk = stk.Push(ai)
 
 		case 'l': // push(strlen(pop))
-			a, stk = stk.PopString()
+			a, stkstr = stkstr.Pop()
 			stk = stk.Push(len(a))
 
 		case '+':
-			bi, stk = stk.PopInt()
-			ai, stk = stk.PopInt()
+			bi, stk = stk.Pop()
+			ai, stk = stk.Pop()
 			stk = stk.Push(ai + bi)
 
 		case '-':
-			bi, stk = stk.PopInt()
-			ai, stk = stk.PopInt()
+			bi, stk = stk.Pop()
+			ai, stk = stk.Pop()
 			stk = stk.Push(ai - bi)
 
 		case '*':
-			bi, stk = stk.PopInt()
-			ai, stk = stk.PopInt()
+			bi, stk = stk.Pop()
+			ai, stk = stk.Pop()
 			stk = stk.Push(ai * bi)
 
 		case '/':
-			bi, stk = stk.PopInt()
-			ai, stk = stk.PopInt()
+			bi, stk = stk.Pop()
+			ai, stk = stk.Pop()
 			if bi != 0 {
 				stk = stk.Push(ai / bi)
 			} else {
@@ -518,8 +489,8 @@ func (t *Terminfo) TParm(s string, p ...interface{}) []byte {
 			}
 
 		case 'm': // push(pop mod pop)
-			bi, stk = stk.PopInt()
-			ai, stk = stk.PopInt()
+			bi, stk = stk.Pop()
+			ai, stk = stk.Pop()
 			if bi != 0 {
 				stk = stk.Push(ai % bi)
 			} else {
@@ -527,42 +498,42 @@ func (t *Terminfo) TParm(s string, p ...interface{}) []byte {
 			}
 
 		case '&': // AND
-			bi, stk = stk.PopInt()
-			ai, stk = stk.PopInt()
+			bi, stk = stk.Pop()
+			ai, stk = stk.Pop()
 			stk = stk.Push(ai & bi)
 
 		case '|': // OR
-			bi, stk = stk.PopInt()
-			ai, stk = stk.PopInt()
+			bi, stk = stk.Pop()
+			ai, stk = stk.Pop()
 			stk = stk.Push(ai | bi)
 
 		case '^': // XOR
-			bi, stk = stk.PopInt()
-			ai, stk = stk.PopInt()
+			bi, stk = stk.Pop()
+			ai, stk = stk.Pop()
 			stk = stk.Push(ai ^ bi)
 
 		case '~': // bit complement
-			ai, stk = stk.PopInt()
+			ai, stk = stk.Pop()
 			stk = stk.Push(ai ^ -1)
 
 		case '!': // logical NOT
-			ai, stk = stk.PopInt()
-			stk = stk.Push(ai == 0)
+			ai, stk = stk.Pop()
+			stk = PushBool(stk, ai == 0)
 
 		case '=': // numeric compare
-			bi, stk = stk.PopInt()
-			ai, stk = stk.PopInt()
-			stk = stk.Push(ai == bi)
+			bi, stk = stk.Pop()
+			ai, stk = stk.Pop()
+			stk = PushBool(stk, ai == bi)
 
 		case '>': // greater than, numeric
-			bi, stk = stk.PopInt()
-			ai, stk = stk.PopInt()
-			stk = stk.Push(ai > bi)
+			bi, stk = stk.Pop()
+			ai, stk = stk.Pop()
+			stk = PushBool(stk, ai > bi)
 
 		case '<': // less than, numeric
-			bi, stk = stk.PopInt()
-			ai, stk = stk.PopInt()
-			stk = stk.Push(ai < bi)
+			bi, stk = stk.Pop()
+			ai, stk = stk.Pop()
+			stk = PushBool(stk, ai < bi)
 
 		case '?': // start conditional
 
@@ -570,7 +541,7 @@ func (t *Terminfo) TParm(s string, p ...interface{}) []byte {
 			skip = emit
 
 		case 't':
-			ai, stk = stk.PopInt()
+			ai, stk = stk.Pop()
 			if ai == 0 {
 				skip = toElse
 			}
@@ -703,7 +674,8 @@ func (t *Terminfo) TPutsString(w io.Writer, s string) {
 // TGoto returns a string suitable for addressing the cursor at the given
 // row and column.  The origin 0, 0 is in the upper left corner of the screen.
 func (t *Terminfo) TGoto(col, row int) []byte {
-	return t.TParm(t.SetCursor, row, col)
+	var rowcol = [2]int{row, col}
+	return t.TParm(t.SetCursor, rowcol[:])
 }
 
 var (

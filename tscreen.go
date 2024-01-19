@@ -582,21 +582,21 @@ func (t *tScreen) sendFgBg(fg Color, bg Color, attr AttrMask) AttrMask {
 			r1, g1, b1 := fg.RGB()
 			r2, g2, b2 := bg.RGB()
 			t.TPuts(ti.TParm(ti.SetFgBgRGB,
-				int(r1), int(g1), int(b1),
-				int(r2), int(g2), int(b2)))
+				[]int{int(r1), int(g1), int(b1),
+					int(r2), int(g2), int(b2)}))
 			return attr
 		}
 
 		if fg.IsRGB() && ti.SetFgRGB != "" {
 			r, g, b := fg.RGB()
-			t.TPuts(ti.TParm(ti.SetFgRGB, int(r), int(g), int(b)))
+			t.TPuts(ti.TParm(ti.SetFgRGB, []int{int(r), int(g), int(b)}))
 			fg = ColorDefault
 		}
 
 		if bg.IsRGB() && ti.SetBgRGB != "" {
 			r, g, b := bg.RGB()
 			t.TPuts(ti.TParm(ti.SetBgRGB,
-				int(r), int(g), int(b)))
+				[]int{int(r), int(g), int(b)}))
 			bg = ColorDefault
 		}
 	}
@@ -622,13 +622,13 @@ func (t *tScreen) sendFgBg(fg Color, bg Color, attr AttrMask) AttrMask {
 	}
 
 	if fg.Valid() && bg.Valid() && ti.SetFgBg != "" {
-		t.TPuts(ti.TParm(ti.SetFgBg, int(fg&0xff), int(bg&0xff)))
+		t.TPuts(ti.TParm(ti.SetFgBg, []int{int(fg & 0xff), int(bg & 0xff)}))
 	} else {
 		if fg.Valid() && ti.SetFg != "" {
-			t.TPuts(ti.TParm(ti.SetFg, int(fg&0xff)))
+			t.TPuts(ti.TParm(ti.SetFg, []int{int(fg & 0xff)}))
 		}
 		if bg.Valid() && ti.SetBg != "" {
-			t.TPuts(ti.TParm(ti.SetBg, int(bg&0xff)))
+			t.TPuts(ti.TParm(ti.SetBg, []int{int(bg & 0xff)}))
 		}
 	}
 	return attr
