@@ -14,7 +14,8 @@
 
 package tcell
 
-type cell struct {
+// Cell represents a cell in a two-dimensional array of character cells.
+type Cell struct {
 	currMain  rune
 	currComb  []rune
 	currStyle Style
@@ -33,7 +34,7 @@ type cell struct {
 type CellBuffer struct {
 	w     int
 	h     int
-	cells []cell
+	cells []Cell
 }
 
 // SetContentWidth behaves like SetContent, but allows clients
@@ -62,7 +63,18 @@ func (cb *CellBuffer) SetContentWidth(x int, y int,
 func (cb *CellBuffer) GetContent(x, y int) (
 	mainc rune, combc []rune, style Style, width int, dirty bool,
 ) {
-	c := &cb.cells[(y*cb.w)+x]
+	return cb.ProcessCell(cb.GetCell(x, y))
+}
+
+// GetCell gets the cell at x and y coordinates.
+func (cb *CellBuffer) GetCell(x, y int) *Cell {
+	return &cb.cells[(y*cb.w)+x]
+}
+
+// ProcessCell unwraps the given cell
+func (cb *CellBuffer) ProcessCell(c *Cell) (
+	mainc rune, combc []rune, style Style, width int, dirty bool,
+) {
 	mainc, combc, style, width = c.currMain, c.currComb, c.currStyle, c.width
 	// it is imperative that width is never 0 or otherwise
 	// SetContent next cell calculations might fail
@@ -72,7 +84,10 @@ func (cb *CellBuffer) GetContent(x, y int) (
 		combc = nil
 	}
 	return mainc, combc, style, width, cb.dirty(c)
+}
 
+func (cb *CellBuffer) getCells() []Cell {
+	return cb.cells
 }
 
 // Size returns the (width, height) in cells of the buffer.
@@ -94,7 +109,7 @@ func (cb *CellBuffer) Dirty(x, y int) bool {
 	return cb.dirty(&cb.cells[(y*cb.w)+x])
 }
 
-func (cb *CellBuffer) dirty(c *cell) bool {
+func (cb *CellBuffer) dirty(c *Cell) bool {
 	return c.lastMain == rune(0) ||
 		c.lastMain != c.currMain ||
 		c.lastStyle != c.currStyle ||
@@ -107,10 +122,19 @@ func (cb *CellBuffer) SetDirty(x, y int) {
 	cb.cells[(y*cb.w)+x].lastMain = 0
 }
 
+// SetDirty marks the given Cell as dirty.
+func SetDirty(c *Cell) {
+	c.lastMain = 0
+}
+
 // ClearDirty is normally used to indicate that a cell has
 // been displayed.
 func (cb *CellBuffer) ClearDirty(x, y int) {
-	c := &cb.cells[(y*cb.w)+x]
+	ClearDirty(&cb.cells[(y*cb.w)+x])
+}
+
+// ClearDirty marks the given Cell as not dirty.
+func ClearDirty(c *Cell) {
 	c.lastMain = c.currMain
 	c.lastComb = c.currComb
 	c.lastStyle = c.currStyle
@@ -124,7 +148,7 @@ func (cb *CellBuffer) Resize(w, h int) {
 		return
 	}
 
-	newc := make([]cell, w*h)
+	newc := make([]Cell, w*h)
 	for y := 0; y < h && y < cb.h; y++ {
 		for x := 0; x < w && x < cb.w; x++ {
 			oc := &cb.cells[(y*cb.w)+x]

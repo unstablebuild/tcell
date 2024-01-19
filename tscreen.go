@@ -635,14 +635,18 @@ func (t *tScreen) sendFgBg(fg Color, bg Color, attr AttrMask) AttrMask {
 }
 
 func (t *tScreen) drawCell(x, y int) int {
-
-	ti := t.ti
-
-	mainc, combc, style, width, dirty := t.cells.GetContent(x, y)
+	c := t.cells.GetCell(x, y)
+	mainc, combc, style, width, dirty := t.cells.ProcessCell(c)
 	if !dirty {
 		return width
 	}
+	width = t.doDrawCell(x, y, mainc, combc, style, width)
+	ClearDirty(c)
+	return width
+}
 
+func (t *tScreen) doDrawCell(x, y int, mainc rune, combc []rune, style Style, width int) int {
+	ti := t.ti
 	if y == t.h-1 && x == t.w-1 && t.ti.AutoMargin && ti.InsertChar != "" {
 		// our solution is somewhat goofy.
 		// we write to the second to the last cell what we want in the last cell, then we
@@ -708,7 +712,6 @@ func (t *tScreen) drawCell(x, y int) int {
 		width = 1
 		t.writeStringBuffer(" ")
 		t.cx += width
-		t.cells.ClearDirty(x, y)
 		return width
 	}
 
@@ -721,7 +724,6 @@ func (t *tScreen) drawCell(x, y int) int {
 	}
 
 	t.cx += width
-	t.cells.ClearDirty(x, y)
 	if width > 1 {
 		t.cx = -1
 	}
@@ -819,18 +821,29 @@ func (t *tScreen) draw() {
 	// hide the cursor while we move stuff around
 	t.hideCursor()
 
-	for y := 0; y < t.h; y++ {
-		for x := 0; x < t.w; x++ {
-			width := t.drawCell(x, y)
-			if width > 1 {
-				for i := 1; i < width && x+i < t.w; i++ {
-					// this is necessary so that if we ever
-					// go back to drawing that cell, we
-					// actually will re-draw it.
-					t.cells.SetDirty(x+i, y)
-				}
-				x += width - 1
-			}
+	cells := t.cells.getCells()
+
+	for i := 0; i < len(cells); i++ {
+		mainc, combc, style, width, dirty := t.cells.ProcessCell(&cells[i])
+		if !dirty {
+			continue
+		}
+
+		x := i % t.w
+		y := i / t.w
+
+		width = t.doDrawCell(x, y, mainc, combc, style, width)
+		if width == 1 {
+			ClearDirty(&cells[i])
+			continue
+		}
+
+		for j := 1; j < width && x+j < t.w; j++ {
+			// this is necessary so that if we ever
+			// go back to drawing that cell, we
+			// actually will re-draw it.
+			SetDirty(&cells[i+j])
+			i++
 		}
 	}
 
