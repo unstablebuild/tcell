@@ -63,7 +63,10 @@ func (cb *CellBuffer) SetContentWidth(x int, y int,
 func (cb *CellBuffer) GetContent(x, y int) (
 	mainc rune, combc []rune, style Style, width int, dirty bool,
 ) {
-	return cb.ProcessCell(cb.GetCell(x, y))
+	c := cb.GetCell(x, y)
+	mainc, combc, style, width = cb.ProcessCell(c)
+	dirty = cb.Dirty(c)
+	return
 }
 
 // GetCell gets the cell at x and y coordinates.
@@ -73,7 +76,7 @@ func (cb *CellBuffer) GetCell(x, y int) *Cell {
 
 // ProcessCell unwraps the given cell
 func (cb *CellBuffer) ProcessCell(c *Cell) (
-	mainc rune, combc []rune, style Style, width int, dirty bool,
+	mainc rune, combc []rune, style Style, width int,
 ) {
 	mainc, combc, style, width = c.currMain, c.currComb, c.currStyle, c.width
 	// it is imperative that width is never 0 or otherwise
@@ -83,7 +86,7 @@ func (cb *CellBuffer) ProcessCell(c *Cell) (
 		mainc = ' '
 		combc = nil
 	}
-	return mainc, combc, style, width, cb.dirty(c)
+	return mainc, combc, style, width
 }
 
 func (cb *CellBuffer) getCells() []Cell {
@@ -105,11 +108,14 @@ func (cb *CellBuffer) Invalidate() {
 // Dirty checks if a character at the given location needs to be
 // refreshed on the physical display.  This returns true if the cell
 // content is different since the last time it was marked clean.
-func (cb *CellBuffer) Dirty(x, y int) bool {
-	return cb.dirty(&cb.cells[(y*cb.w)+x])
+func (cb *CellBuffer) DirtyAt(x, y int) bool {
+	return cb.Dirty(&cb.cells[(y*cb.w)+x])
 }
 
-func (cb *CellBuffer) dirty(c *Cell) bool {
+// Dirty checks if the given cell needs to be
+// refreshed on the physical display.  This returns true if the cell
+// content is different since the last time it was marked clean.
+func (cb *CellBuffer) Dirty(c *Cell) bool {
 	return c.lastMain == rune(0) ||
 		c.lastMain != c.currMain ||
 		c.lastStyle != c.currStyle ||

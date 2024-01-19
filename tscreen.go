@@ -636,7 +636,8 @@ func (t *tScreen) sendFgBg(fg Color, bg Color, attr AttrMask) AttrMask {
 
 func (t *tScreen) drawCell(x, y int) int {
 	c := t.cells.GetCell(x, y)
-	mainc, combc, style, width, dirty := t.cells.ProcessCell(c)
+	dirty := t.cells.Dirty(c)
+	mainc, combc, style, width := t.cells.ProcessCell(c)
 	if !dirty {
 		return width
 	}
@@ -824,13 +825,16 @@ func (t *tScreen) draw() {
 	cells := t.cells.getCells()
 
 	for i := 0; i < len(cells); i++ {
-		mainc, combc, style, width, dirty := t.cells.ProcessCell(&cells[i])
+		c := &cells[i]
+		dirty := t.cells.Dirty(c)
 		if !dirty {
 			continue
 		}
 
 		x := i % t.w
 		y := i / t.w
+
+		mainc, combc, style, width := t.cells.ProcessCell(c)
 
 		width = t.doDrawCell(x, y, mainc, combc, style, width)
 		if width == 1 {
