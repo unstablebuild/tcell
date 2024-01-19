@@ -148,7 +148,7 @@ func makeBox(s Screen, i int) {
 	gl = glyphs[i%len(glyphs)]
 
 	if i%5 != 0 {
-		st.Foreground(Color(i)%(ColorYellowGreen-ColorValid) + ColorValid)
+		st = st.Foreground(Color(i)%(ColorYellowGreen-ColorValid) + ColorValid)
 	}
 
 	for row := 0; row < lh; row++ {
