@@ -1381,9 +1381,9 @@ func (t *tScreen) parseRune(buf *bytes.Buffer, evs *[]Event) (bool, bool) {
 		return false, false
 	}
 
-	utf := make([]byte, 12)
+	var utf [12]byte
 	for l := 1; l <= len(b); l++ {
-		nOut, nIn, e := encoding.UTF8Validator.Transform(utf, b[:l], true)
+		nOut, nIn, e := encoding.UTF8Validator.Transform(utf[:], b[:l], true)
 		if e == transform.ErrShortSrc {
 			continue
 		}
@@ -1408,25 +1408,23 @@ func (t *tScreen) parseRune(buf *bytes.Buffer, evs *[]Event) (bool, bool) {
 	return true, false
 }
 
-func (t *tScreen) scanInput(buf *bytes.Buffer, expire bool) {
-	evs := t.collectEventsFromInput(buf, expire)
-
-	for _, ev := range evs {
+func (t *tScreen) scanInput(events []Event, buf *bytes.Buffer, expire bool) []Event {
+	events = events[:0]
+	events = t.collectEventsFromInput(events, buf, expire)
+	for _, ev := range events {
 		select {
 		case t.eventQ <- ev:
 		case <-t.quit:
-			return
+			return events
 		}
 	}
+	return events
 }
 
 // Return an array of Events extracted from the supplied buffer. This is done
 // while holding the screen's lock - the events can then be queued for
 // application processing with the lock released.
-func (t *tScreen) collectEventsFromInput(buf *bytes.Buffer, expire bool) []Event {
-
-	res := make([]Event, 0, 20)
-
+func (t *tScreen) collectEventsFromInput(res []Event, buf *bytes.Buffer, expire bool) []Event {
 	for {
 		b := buf.Bytes()
 		if len(b) == 0 {
@@ -1506,7 +1504,9 @@ func (t *tScreen) collectEventsFromInput(buf *bytes.Buffer, expire bool) []Event
 
 func (t *tScreen) mainLoop(stopQ chan struct{}) {
 	defer t.wg.Done()
-	buf := &bytes.Buffer{}
+	var buf bytes.Buffer
+	events := make([]Event, 0, 20)
+
 	for {
 		select {
 		case <-stopQ:
@@ -1521,7 +1521,7 @@ func (t *tScreen) mainLoop(stopQ chan struct{}) {
 			// This lets us detect conflicts such as a lone ESC.
 			if buf.Len() > 0 {
 				if time.Now().After(t.keyexpire) {
-					t.scanInput(buf, true)
+					events = t.scanInput(events, &buf, true)
 				}
 			}
 			if buf.Len() > 0 {
@@ -1536,7 +1536,7 @@ func (t *tScreen) mainLoop(stopQ chan struct{}) {
 		case chunk := <-t.keychan:
 			buf.Write(chunk)
 			t.keyexpire = time.Now().Add(time.Millisecond * 50)
-			t.scanInput(buf, false)
+			events = t.scanInput(events, &buf, false)
 			if !t.keytimer.Stop() {
 				select {
 				case <-t.keytimer.C:
@@ -1551,7 +1551,7 @@ func (t *tScreen) mainLoop(stopQ chan struct{}) {
 }
 
 func (t *tScreen) inputLoop(stopQ chan struct{}) {
-
+	chunk := make([]byte, 128)
 	defer t.wg.Done()
 	for {
 		select {
@@ -1559,7 +1559,6 @@ func (t *tScreen) inputLoop(stopQ chan struct{}) {
 			return
 		default:
 		}
-		chunk := make([]byte, 128)
 		n, e := t.tty.Read(chunk)
 		switch e {
 		case nil:
