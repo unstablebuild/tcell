@@ -965,7 +965,6 @@ func (t *tScreen) resize() {
 	t.cy = -1
 
 	t.cells.Resize(ws.Width, ws.Height)
-	t.cells.Invalidate()
 	t.h = ws.Height
 	t.w = ws.Width
 	t.buf.Grow(t.h*t.w*6 + t.h*t.w*100)

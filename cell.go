@@ -99,13 +99,6 @@ func (cb *CellBuffer) Size() (int, int) {
 	return cb.w, cb.h
 }
 
-// Invalidate marks all characters within the buffer as dirty.
-func (cb *CellBuffer) Invalidate() {
-	for i := range cb.cells {
-		cb.cells[i].lastMain = rune(0)
-	}
-}
-
 // Dirty checks if a character at the given location needs to be
 // refreshed on the physical display.  This returns true if the cell
 // content is different since the last time it was marked clean.

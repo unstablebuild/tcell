@@ -249,7 +249,6 @@ func (s *simscreen) resize() {
 	ow, oh := s.back.Size()
 	if w != ow || h != oh {
 		s.back.Resize(w, h)
-		s.back.Invalidate()
 	}
 	s.dirty = false
 }
