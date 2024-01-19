@@ -233,10 +233,11 @@ type Terminfo struct {
 	EnableFocusReporting    string
 	DisableFocusReporting   string
 
-	pb     paramsBuffer
-	stk    stack
-	dvars  [26]string
-	params [9]interface{}
+	pb      paramsBuffer
+	stk     stack
+	dvars   [26]string
+	params  [9]interface{}
+	gotobuf []byte
 }
 
 const (
@@ -305,9 +306,8 @@ func (pb *paramsBuffer) Start(s string) {
 }
 
 // End returns the final output from TParam, but it also releases the lock.
-func (pb *paramsBuffer) End() string {
-	s := pb.out.String()
-	return s
+func (pb *paramsBuffer) End() []byte {
+	return pb.out.Bytes()
 }
 
 // NextCh returns the next input character to the expander.
@@ -325,10 +325,15 @@ func (pb *paramsBuffer) PutString(s string) {
 	pb.out.WriteString(s)
 }
 
+// Put schedules a slice of bytes for output.
+func (pb *paramsBuffer) Put(data []byte) {
+	pb.out.Write(data)
+}
+
 // TParm takes a terminfo parameterized string, such as setaf or cup, and
 // evaluates the string, and returns the result with the parameter
 // applied.
-func (t *Terminfo) TParm(s string, p ...interface{}) string {
+func (t *Terminfo) TParm(s string, p ...interface{}) []byte {
 	var a string
 	var ai, bi int
 	params := t.params
@@ -408,7 +413,10 @@ func (t *Terminfo) TParm(s string, p ...interface{}) string {
 
 		case 'd':
 			ai, stk = stk.PopInt()
-			t.pb.PutString(strconv.Itoa(ai))
+			// this happens a lot due to TGoto being called for every cell on the screen
+			t.gotobuf = strconv.AppendInt(t.gotobuf, int64(ai), 10)
+			t.pb.Put(t.gotobuf)
+			t.gotobuf = t.gotobuf[:0]
 
 		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'x', 'X', 'o', ':':
 			// This is pretty suboptimal, but this is rarely used.
@@ -571,7 +579,8 @@ func (t *Terminfo) TParm(s string, p ...interface{}) string {
 			skip = toEnd
 
 		default:
-			t.pb.PutString("%" + string(ch))
+			t.pb.PutString("%")
+			t.pb.PutCh(ch)
 		}
 	}
 
@@ -584,20 +593,21 @@ func (t *Terminfo) TParm(s string, p ...interface{}) string {
 // a suitable time (unless the terminfo string indicates this isn't needed
 // by specifying npc - no padding).  All Terminfo based strings should be
 // emitted using this function.
-func (t *Terminfo) TPuts(w io.Writer, s string) {
+func (t *Terminfo) TPuts(w io.Writer, s []byte) {
 	for {
-		beg := strings.Index(s, "$<")
+		beg := bytes.Index(s, []byte{'$', '<'})
 		if beg < 0 {
 			// Most strings don't need padding, which is good news!
-			_, _ = io.WriteString(w, s)
+			w.Write(s)
 			return
 		}
-		_, _ = io.WriteString(w, s[:beg])
+		w.Write(s[:beg])
 		s = s[beg+2:]
-		end := strings.Index(s, ">")
+		end := bytes.Index(s, []byte{'>'})
 		if end < 0 {
 			// unterminated.. just emit bytes unadulterated
-			_, _ = io.WriteString(w, "$<"+s)
+			w.Write([]byte("$<"))
+			w.Write(s)
 			return
 		}
 		val := s[:end]
@@ -636,33 +646,8 @@ func (t *Terminfo) TPuts(w io.Writer, s string) {
 
 // TGoto returns a string suitable for addressing the cursor at the given
 // row and column.  The origin 0, 0 is in the upper left corner of the screen.
-func (t *Terminfo) TGoto(col, row int) string {
+func (t *Terminfo) TGoto(col, row int) []byte {
 	return t.TParm(t.SetCursor, row, col)
-}
-
-// TColor returns a string corresponding to the given foreground and background
-// colors.  Either fg or bg can be set to -1 to elide.
-func (t *Terminfo) TColor(fi, bi int) string {
-	rv := ""
-	// As a special case, we map bright colors to lower versions if the
-	// color table only holds 8.  For the remaining 240 colors, the user
-	// is out of luck.  Someday we could create a mapping table, but its
-	// not worth it.
-	if t.Colors == 8 {
-		if fi > 7 && fi < 16 {
-			fi -= 8
-		}
-		if bi > 7 && bi < 16 {
-			bi -= 8
-		}
-	}
-	if t.Colors > fi && fi >= 0 {
-		rv += t.TParm(t.SetFg, fi)
-	}
-	if t.Colors > bi && bi >= 0 {
-		rv += t.TParm(t.SetBg, bi)
-	}
-	return rv
 }
 
 var (
