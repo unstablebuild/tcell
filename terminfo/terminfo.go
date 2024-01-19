@@ -588,7 +588,7 @@ func (t *Terminfo) TParm(s string, p ...interface{}) []byte {
 	return t.pb.End()
 }
 
-// TPuts emits the string to the writer, but expands inline padding
+// TPuts emits the given data to the writer, but expands inline padding
 // indications (of the form $<[delay]> where [delay] is msec) to
 // a suitable time (unless the terminfo string indicates this isn't needed
 // by specifying npc - no padding).  All Terminfo based strings should be
@@ -606,8 +606,64 @@ func (t *Terminfo) TPuts(w io.Writer, s []byte) {
 		end := bytes.Index(s, []byte{'>'})
 		if end < 0 {
 			// unterminated.. just emit bytes unadulterated
-			w.Write([]byte("$<"))
+			io.WriteString(w, "$<")
 			w.Write(s)
+			return
+		}
+		val := s[:end]
+		s = s[end+1:]
+		padus := 0
+		unit := time.Millisecond
+		dot := false
+	loop:
+		for i := range val {
+			switch val[i] {
+			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+				padus *= 10
+				padus += int(val[i] - '0')
+				if dot {
+					unit /= 10
+				}
+			case '.':
+				if !dot {
+					dot = true
+				} else {
+					break loop
+				}
+			default:
+				break loop
+			}
+		}
+
+		// Curses historically uses padding to achieve "fine grained"
+		// delays. We have much better clocks these days, and so we
+		// do not rely on padding but simply sleep a bit.
+		if len(t.PadChar) > 0 {
+			time.Sleep(unit * time.Duration(padus))
+		}
+	}
+}
+
+// TPuts emits the string to the writer, but expands inline padding
+// indications (of the form $<[delay]> where [delay] is msec) to
+// a suitable time (unless the terminfo string indicates this isn't needed
+// by specifying npc - no padding).  All Terminfo based strings should be
+// emitted using this function.
+func (t *Terminfo) TPutsString(w io.Writer, s string) {
+	for {
+		beg := strings.Index(s, "$<")
+		if beg < 0 {
+			// Most strings don't need padding, which is good news!
+			io.WriteString(w, s)
+			return
+		}
+		io.WriteString(w, s[:beg])
+		s = s[beg+2:]
+		end := strings.Index(s, ">")
+		if end < 0 {
+			// unterminated.. just emit bytes unadulterated
+			io.WriteString(w, "$<")
+			io.WriteString(w, s)
 			return
 		}
 		val := s[:end]

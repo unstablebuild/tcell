@@ -575,7 +575,7 @@ func (t *tScreen) sendFgBg(fg Color, bg Color, attr AttrMask) AttrMask {
 	}
 
 	if fg == ColorReset || bg == ColorReset {
-		t.TPuts([]byte(ti.ResetFgBg))
+		t.TPutsString(ti.ResetFgBg)
 	}
 	if t.truecolor {
 		if ti.SetFgBgRGB != "" && fg.IsRGB() && bg.IsRGB() {
@@ -656,7 +656,7 @@ func (t *tScreen) doDrawCell(x, y int, mainc rune, combc []rune, style Style, wi
 		t.TPuts(ti.TGoto(x-1, y))
 		defer func() {
 			t.TPuts(ti.TGoto(x-1, y))
-			t.TPuts([]byte(ti.InsertChar))
+			t.TPutsString(ti.InsertChar)
 			t.cy = y
 			t.cx = x - 1
 			t.cells.SetDirty(x-1, y)
@@ -677,29 +677,29 @@ func (t *tScreen) doDrawCell(x, y int, mainc rune, combc []rune, style Style, wi
 	if style != t.curstyle {
 		fg, bg, attrs := style.Decompose()
 
-		t.TPuts([]byte(ti.AttrOff))
+		t.TPutsString(ti.AttrOff)
 
 		attrs = t.sendFgBg(fg, bg, attrs)
 		if attrs&AttrBold != 0 {
-			t.TPuts([]byte(ti.Bold))
+			t.TPutsString(ti.Bold)
 		}
 		if attrs&AttrUnderline != 0 {
-			t.TPuts([]byte(ti.Underline))
+			t.TPutsString(ti.Underline)
 		}
 		if attrs&AttrReverse != 0 {
-			t.TPuts([]byte(ti.Reverse))
+			t.TPutsString(ti.Reverse)
 		}
 		if attrs&AttrBlink != 0 {
-			t.TPuts([]byte(ti.Blink))
+			t.TPutsString(ti.Blink)
 		}
 		if attrs&AttrDim != 0 {
-			t.TPuts([]byte(ti.Dim))
+			t.TPutsString(ti.Dim)
 		}
 		if attrs&AttrItalic != 0 {
-			t.TPuts([]byte(ti.Italic))
+			t.TPutsString(ti.Italic)
 		}
 		if attrs&AttrStrikeThrough != 0 {
-			t.TPuts([]byte(ti.StrikeThrough))
+			t.TPutsString(ti.StrikeThrough)
 		}
 
 		t.curstyle = style
@@ -754,10 +754,10 @@ func (t *tScreen) showCursor() {
 		return
 	}
 	t.TPuts(t.ti.TGoto(x, y))
-	t.TPuts([]byte(t.ti.ShowCursor))
+	t.TPutsString(t.ti.ShowCursor)
 	if t.cursorStyles != nil {
 		if esc, ok := t.cursorStyles[t.cursorStyle]; ok {
-			t.TPuts([]byte(esc))
+			t.TPutsString(esc)
 		}
 	}
 	t.cx = x
@@ -790,6 +790,14 @@ func (t *tScreen) TPuts(s []byte) {
 	}
 }
 
+func (t *tScreen) TPutsString(s string) {
+	if t.buffering {
+		t.ti.TPutsString(&t.buf, s)
+	} else {
+		t.ti.TPutsString(t.tty, s)
+	}
+}
+
 func (t *tScreen) Show() {
 	if t.dirty.Load() {
 		t.resize()
@@ -800,7 +808,7 @@ func (t *tScreen) Show() {
 func (t *tScreen) hideCursor() {
 	// does not update cursor position
 	if t.ti.HideCursor != "" {
-		t.TPuts([]byte(t.ti.HideCursor))
+		t.TPutsString(t.ti.HideCursor)
 	} else {
 		// No way to hide cursor, stick it
 		// at bottom right of screen
@@ -879,18 +887,18 @@ func (t *tScreen) enableMouse(f MouseFlags) {
 	// XTerm standards (the modern ones).
 	if len(t.mouse) != 0 {
 		// start by disabling all tracking.
-		t.TPuts([]byte("\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1006l"))
+		t.TPutsString("\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1006l")
 		if f&MouseButtonEvents != 0 {
-			t.TPuts([]byte("\x1b[?1000h"))
+			t.TPutsString("\x1b[?1000h")
 		}
 		if f&MouseDragEvents != 0 {
-			t.TPuts([]byte("\x1b[?1002h"))
+			t.TPutsString("\x1b[?1002h")
 		}
 		if f&MouseMotionEvents != 0 {
-			t.TPuts([]byte("\x1b[?1003h"))
+			t.TPutsString("\x1b[?1003h")
 		}
 		if f&(MouseButtonEvents|MouseDragEvents|MouseMotionEvents) != 0 {
-			t.TPuts([]byte("\x1b[?1006h"))
+			t.TPutsString("\x1b[?1006h")
 		}
 	}
 
@@ -919,7 +927,7 @@ func (t *tScreen) enablePasting(on bool) {
 		s = t.disablePaste
 	}
 	if s != "" {
-		t.TPuts([]byte(s))
+		t.TPutsString(s)
 	}
 }
 
@@ -935,13 +943,13 @@ func (t *tScreen) DisableFocus() {
 
 func (t *tScreen) enableFocusReporting() {
 	if t.enableFocus != "" {
-		t.TPuts([]byte(t.enableFocus))
+		t.TPutsString(t.enableFocus)
 	}
 }
 
 func (t *tScreen) disableFocusReporting() {
 	if t.disableFocus != "" {
-		t.TPuts([]byte(t.disableFocus))
+		t.TPutsString(t.disableFocus)
 	}
 }
 
@@ -1612,11 +1620,11 @@ func (t *tScreen) engage() error {
 	}
 
 	ti := t.ti
-	t.TPuts([]byte(ti.EnterCA))
-	t.TPuts([]byte(ti.EnterKeypad))
-	t.TPuts([]byte(ti.HideCursor))
-	t.TPuts([]byte(ti.EnableAcs))
-	t.TPuts([]byte(ti.Clear))
+	t.TPutsString(ti.EnterCA)
+	t.TPutsString(ti.EnterKeypad)
+	t.TPutsString(ti.HideCursor)
+	t.TPutsString(ti.EnableAcs)
+	t.TPutsString(ti.Clear)
 
 	t.wg.Add(2)
 	go t.inputLoop(stopQ)
@@ -1643,15 +1651,15 @@ func (t *tScreen) disengage() {
 	// shutdown the screen and disable special modes (e.g. mouse and bracketed paste)
 	ti := t.ti
 	t.cells.Resize(0, 0)
-	t.TPuts([]byte(ti.ShowCursor))
+	t.TPutsString(ti.ShowCursor)
 	if t.cursorStyles != nil && t.cursorStyle != CursorStyleDefault {
-		t.TPuts([]byte(t.cursorStyles[CursorStyleDefault]))
+		t.TPutsString(t.cursorStyles[CursorStyleDefault])
 	}
-	t.TPuts([]byte(ti.ResetFgBg))
-	t.TPuts([]byte(ti.AttrOff))
-	t.TPuts([]byte(ti.Clear))
-	t.TPuts([]byte(ti.ExitCA))
-	t.TPuts([]byte(ti.ExitKeypad))
+	t.TPutsString(ti.ResetFgBg)
+	t.TPutsString(ti.AttrOff)
+	t.TPutsString(ti.Clear)
+	t.TPutsString(ti.ExitCA)
+	t.TPutsString(ti.ExitKeypad)
 	t.enableMouse(0)
 	t.enablePasting(false)
 	t.disableFocusReporting()
