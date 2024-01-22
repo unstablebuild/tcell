@@ -1575,7 +1575,7 @@ func (t *tScreen) engage() error {
 	t.TPutsString(ti.EnterCA)
 	t.TPutsString(ti.EnterKeypad)
 	t.TPutsString(ti.HideCursor)
-	t.TPutsString(ti.EnableAcs)
+	// t.TPutsString(ti.EnableAcs)
 	t.TPutsString(ti.Clear)
 
 	t.wg.Add(2)
