@@ -997,53 +997,6 @@ func (t *tScreen) Poll() <-chan Event {
 	return t.eventQ
 }
 
-// vtACSNames is a map of bytes defined by terminfo that are used in
-// the terminals Alternate Character Set to represent other glyphs.
-// For example, the upper left corner of the box drawing set can be
-// displayed by printing "l" while in the alternate character set.
-// It's not quite that simple, since the "l" is the terminfo name,
-// and it may be necessary to use a different character based on
-// the terminal implementation (or the terminal may lack support for
-// this altogether).  See buildAcsMap below for detail.
-var vtACSNames = map[byte]rune{
-	'+': RuneRArrow,
-	',': RuneLArrow,
-	'-': RuneUArrow,
-	'.': RuneDArrow,
-	'0': RuneBlock,
-	'`': RuneDiamond,
-	'a': RuneCkBoard,
-	'b': '␉', // VT100, Not defined by terminfo
-	'c': '␌', // VT100, Not defined by terminfo
-	'd': '␋', // VT100, Not defined by terminfo
-	'e': '␊', // VT100, Not defined by terminfo
-	'f': RuneDegree,
-	'g': RunePlMinus,
-	'h': RuneBoard,
-	'i': RuneLantern,
-	'j': RuneLRCorner,
-	'k': RuneURCorner,
-	'l': RuneULCorner,
-	'm': RuneLLCorner,
-	'n': RunePlus,
-	'o': RuneS1,
-	'p': RuneS3,
-	'q': RuneHLine,
-	'r': RuneS7,
-	's': RuneS9,
-	't': RuneLTee,
-	'u': RuneRTee,
-	'v': RuneBTee,
-	'w': RuneTTee,
-	'x': RuneVLine,
-	'y': RuneLEqual,
-	'z': RuneGEqual,
-	'{': RunePi,
-	'|': RuneNEqual,
-	'}': RuneSterling,
-	'~': RuneBullet,
-}
-
 func (t *tScreen) clip(x, y int) (int, int) {
 	w, h := t.cells.Size()
 	if x < 0 {

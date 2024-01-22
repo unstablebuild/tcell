@@ -39,12 +39,6 @@ var (
 	// without a controlling TTY or with no /dev/tty on POSIX platforms.)
 	ErrNoScreen = errors.New("no suitable screen available")
 
-	// ErrNoCharset indicates that the locale environment the
-	// program is not supported by the program, because no suitable
-	// encoding was found for it.  This problem never occurs if
-	// the environment is UTF-8 or UTF-16.
-	ErrNoCharset = errors.New("character set not supported")
-
 	// ErrEventQFull indicates that the event queue is full, and
 	// cannot accept more events.
 	ErrEventQFull = errors.New("event queue full")

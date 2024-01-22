@@ -90,7 +90,6 @@ type simscreen struct {
 	paste     bool
 	fillchar  rune
 	fillstyle Style
-	fallback  map[rune]string
 
 	Screen
 }
@@ -109,12 +108,6 @@ func (s *simscreen) Init() error {
 
 	s.front = make([]SimCell, s.physw*s.physh)
 	s.back.Resize(80, 25)
-
-	// default fallbacks
-	s.fallback = make(map[rune]string)
-	for k, v := range RuneFallbacks {
-		s.fallback[k] = v
-	}
 	return nil
 }
 
@@ -355,31 +348,6 @@ func (s *simscreen) GetContents() ([]SimCell, int, int) {
 func (s *simscreen) GetCursor() (int, int, bool) {
 	x, y, vis := s.cursorx, s.cursory, s.cursorvis
 	return x, y, vis
-}
-
-func (s *simscreen) RegisterRuneFallback(r rune, subst string) {
-	s.fallback[r] = subst
-}
-
-func (s *simscreen) UnregisterRuneFallback(r rune) {
-	delete(s.fallback, r)
-}
-
-func (s *simscreen) CanDisplay(r rune, checkFallbacks bool) bool {
-
-	ob := make([]byte, 6)
-	num := utf8.EncodeRune(ob, r)
-
-	if num != 0 && ob[0] != '\x1A' {
-		return true
-	}
-	if !checkFallbacks {
-		return false
-	}
-	if _, ok := s.fallback[r]; ok {
-		return true
-	}
-	return false
 }
 
 func (s *simscreen) HasMouse() bool {
