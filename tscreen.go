@@ -142,7 +142,6 @@ type tScreen struct {
 	cursorStyles map[CursorStyle]string
 	cursorStyle  CursorStyle
 	saved        *term.State
-	stopQ        chan struct{}
 	eventQ       chan Event
 	running      atomic.Bool
 	wg           sync.WaitGroup
@@ -1455,15 +1454,13 @@ func (t *tScreen) collectEventsFromInput(res []Event, buf *bytes.Buffer, expire 
 	return res
 }
 
-func (t *tScreen) mainLoop(stopQ chan struct{}) {
+func (t *tScreen) mainLoop(waitChan chan struct{}) {
 	defer t.wg.Done()
 	var buf bytes.Buffer
 	events := make([]Event, 0, 20)
 
 	for {
 		select {
-		case <-stopQ:
-			return
 		case <-t.quit:
 			return
 		case <-t.keytimer.C:
@@ -1488,6 +1485,11 @@ func (t *tScreen) mainLoop(stopQ chan struct{}) {
 			}
 		case chunk := <-t.keychan:
 			buf.Write(chunk)
+			select {
+			case waitChan <- struct{}{}:
+			case <-t.quit:
+				return
+			}
 			t.keyexpire = time.Now().Add(time.Millisecond * 50)
 			events = t.scanInput(events, &buf, false)
 			if !t.keytimer.Stop() {
@@ -1503,22 +1505,20 @@ func (t *tScreen) mainLoop(stopQ chan struct{}) {
 	}
 }
 
-func (t *tScreen) inputLoop(stopQ chan struct{}) {
-	chunk := make([]byte, 128)
+func (t *tScreen) inputLoop(waitQ chan struct{}) {
+	var chunk [128]byte
 	defer t.wg.Done()
 	for {
 		select {
-		case <-stopQ:
+		case <-t.quit:
 			return
 		default:
 		}
-		n, e := t.tty.Read(chunk)
-		switch e {
-		case nil:
-		default:
+		n, err := t.tty.Read(chunk[:])
+		if err != nil {
 			if t.running.Load() {
 				select {
-				case t.eventQ <- NewEventError(e):
+				case t.eventQ <- NewEventError(err):
 				case <-t.quit:
 				}
 			}
@@ -1527,6 +1527,10 @@ func (t *tScreen) inputLoop(stopQ chan struct{}) {
 		if n > 0 {
 			select {
 			case t.keychan <- chunk[:n]:
+				select {
+				case <-waitQ:
+				case <-t.quit:
+				}
 			case <-t.quit:
 			}
 		}
@@ -1563,8 +1567,6 @@ func (t *tScreen) engage() error {
 	if ws, err := t.tty.WindowSize(); err == nil && ws.Width != 0 && ws.Height != 0 {
 		t.cells.Resize(ws.Width, ws.Height)
 	}
-	stopQ := make(chan struct{})
-	t.stopQ = stopQ
 	t.enableMouse(t.mouseFlags)
 	t.enablePasting(t.pasteEnabled)
 	if t.focusEnabled {
@@ -1579,8 +1581,9 @@ func (t *tScreen) engage() error {
 	t.TPutsString(ti.Clear)
 
 	t.wg.Add(2)
-	go t.inputLoop(stopQ)
-	go t.mainLoop(stopQ)
+	waitChan := make(chan struct{})
+	go t.inputLoop(waitChan)
+	go t.mainLoop(waitChan)
 	return nil
 }
 
@@ -1592,8 +1595,6 @@ func (t *tScreen) disengage() {
 	if !t.running.CompareAndSwap(true, false) {
 		return
 	}
-	stopQ := t.stopQ
-	close(stopQ)
 	_ = t.tty.Drain()
 
 	t.tty.NotifyResize(nil)
