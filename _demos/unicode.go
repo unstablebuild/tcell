@@ -63,12 +63,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	plain := tcell.StyleDefault
-	bold := style.Bold(true)
-
-	s.SetStyle(tcell.StyleDefault.
-		Foreground(tcell.ColorBlack).
-		Background(tcell.ColorWhite))
 	s.Clear()
 
 	quit := make(chan struct{})

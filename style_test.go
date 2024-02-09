@@ -23,18 +23,18 @@ func TestStyle(t *testing.T) {
 	defer s.Fini()
 
 	style := StyleDefault
-	fg, bg, attr := style.Decompose()
+	fg, bg, attr := style.Fg, style.Bg, style.Attrs
 
 	if fg != ColorDefault || bg != ColorDefault || attr != AttrNone {
 		t.Errorf("Bad default style (%v, %v, %v)", fg, bg, attr)
 	}
 
-	s2 := style.
-		Background(ColorRed).
-		Foreground(ColorBlue).
-		Blink(true)
+	s2 := style
+	s2.Bg = ColorRed
+	s2.Fg = ColorBlue
+	s2.Attrs |= AttrBlink
 
-	fg, bg, attr = s2.Decompose()
+	fg, bg, attr = s2.Fg, s2.Bg, s2.Attrs
 	if fg != ColorBlue || bg != ColorRed || attr != AttrBlink {
 		t.Errorf("Bad custom style (%v, %v, %v)", fg, bg, attr)
 	}

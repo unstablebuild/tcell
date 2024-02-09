@@ -674,7 +674,7 @@ func (t *tScreen) doDrawCell(x, y int, mainc rune, combc []rune, style Style, wi
 		style = t.style
 	}
 	if style != t.curstyle {
-		fg, bg, attrs := style.Decompose()
+		fg, bg, attrs := style.Fg, style.Bg, style.Attrs
 
 		t.TPutsString(ti.AttrOff)
 

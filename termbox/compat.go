@@ -23,11 +23,9 @@ import (
 )
 
 var screen tcell.Screen
-var outMode OutputMode
 
 // Init initializes the screen for use.
 func Init() error {
-	outMode = OutputNormal
 	if s, e := tcell.NewScreen(); e != nil {
 		return e
 	} else if e = s.Init(); e != nil {
@@ -88,65 +86,6 @@ const (
 	AttrReverse
 )
 
-func fixColor(c tcell.Color) tcell.Color {
-	if c == tcell.ColorDefault {
-		return c
-	}
-	switch outMode {
-	case OutputNormal:
-		c = tcell.PaletteColor(int(c) & 0xf)
-	case Output256:
-		c = tcell.PaletteColor(int(c) & 0xff)
-	case Output216:
-		c = tcell.PaletteColor(int(c)%216 + 16)
-	case OutputGrayscale:
-		c = tcell.PaletteColor(int(c)%24 + 232)
-	default:
-		c = tcell.ColorDefault
-	}
-	return c
-}
-
-func AttributeToStyle(fg, bg Attribute) tcell.Style {
-	st := tcell.StyleDefault
-
-	var f, b tcell.Color
-
-	fColor := int(fg) & 0x1ff
-	bColor := int(bg) & 0x1ff
-
-	if Attribute(fColor) != ColorDefault {
-		f = tcell.PaletteColor(fColor - 1)
-		f = fixColor(f)
-	}
-	if Attribute(bColor) != ColorDefault {
-		b = tcell.PaletteColor(bColor - 1)
-		b = fixColor(b)
-	}
-
-	st = st.Foreground(f).Background(b)
-	if (fg|bg)&AttrBold != 0 {
-		st = st.Bold(true)
-	}
-	if (fg|bg)&AttrUnderline != 0 {
-		st = st.Underline(true)
-	}
-	if (fg|bg)&AttrReverse != 0 {
-		st = st.Reverse(true)
-	}
-	return st
-}
-
-// Clear clears the screen with the given attributes.
-func Clear(fg, bg Attribute) {
-	if fg == 0 && bg == 0 {
-		screen.Clear()
-		return
-	}
-	st := AttributeToStyle(fg, bg)
-	screen.Fill(' ', st)
-}
-
 // InputMode is not used.
 type InputMode int
 
@@ -169,35 +108,6 @@ func SetInputMode(mode InputMode) InputMode {
 		screen.DisableMouse()
 	}
 	return InputEsc
-}
-
-// OutputMode represents an output mode, which determines how colors
-// are used.  See the termbox documentation for an explanation.
-type OutputMode int
-
-// OutputMode values.
-const (
-	OutputCurrent OutputMode = iota
-	OutputNormal
-	Output256
-	Output216
-	OutputGrayscale
-)
-
-// SetOutputMode is used to set the color palette used.
-func SetOutputMode(mode OutputMode) OutputMode {
-	if screen == nil || screen.Colors() < 256 {
-		mode = OutputNormal
-	}
-	switch mode {
-	case OutputCurrent:
-		return outMode
-	case OutputNormal, Output256, Output216, OutputGrayscale:
-		outMode = mode
-		return mode
-	default:
-		return outMode
-	}
 }
 
 // EventType represents the type of event.

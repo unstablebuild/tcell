@@ -23,12 +23,9 @@ package main
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"runtime"
 
 	"github.com/ernestrc/tcell/v3"
-
-	"github.com/mattn/go-runewidth"
 )
 
 var defStyle tcell.Style
@@ -36,13 +33,8 @@ var defStyle tcell.Style
 func emitStr(s tcell.Screen, x, y int, style tcell.Style, str string) {
 	for _, c := range str {
 		var comb []rune
-		w := runewidth.RuneWidth(c)
-		if w == 0 {
-			comb = []rune{c}
-			c = ' '
-			w = 1
-		}
-		s.SetContent(x, y, c, comb, 1, style)
+		w := 1
+		s.SetContent(x, y, c, comb, w, style)
 		x += w
 	}
 }
@@ -56,19 +48,19 @@ func drawBox(s tcell.Screen, x1, y1, x2, y2 int, style tcell.Style, r rune) {
 	}
 
 	for col := x1; col <= x2; col++ {
-		s.SetContent(col, y1, tcell.RuneHLine, nil, 1, style)
-		s.SetContent(col, y2, tcell.RuneHLine, nil, 1, style)
+		s.SetContent(col, y1, '-', nil, 1, style)
+		s.SetContent(col, y2, '-', nil, 1, style)
 	}
 	for row := y1 + 1; row < y2; row++ {
-		s.SetContent(x1, row, tcell.RuneVLine, nil, 1, style)
-		s.SetContent(x2, row, tcell.RuneVLine, nil, 1, style)
+		s.SetContent(x1, row, '|', nil, 1, style)
+		s.SetContent(x2, row, '|', nil, 1, style)
 	}
 	if y1 != y2 && x1 != x2 {
 		// Only add corners if we need to
-		s.SetContent(x1, y1, tcell.RuneULCorner, nil, 1, style)
-		s.SetContent(x2, y1, tcell.RuneURCorner, nil, 1, style)
-		s.SetContent(x1, y2, tcell.RuneLLCorner, nil, 1, style)
-		s.SetContent(x2, y2, tcell.RuneLRCorner, nil, 1, style)
+		s.SetContent(x1, y1, '<', nil, 1, style)
+		s.SetContent(x2, y1, '>', nil, 1, style)
+		s.SetContent(x1, y2, '<', nil, 1, style)
+		s.SetContent(x2, y2, '>', nil, 1, style)
 	}
 	for row := y1 + 1; row < y2; row++ {
 		for col := x1 + 1; col < x2; col++ {
@@ -87,11 +79,13 @@ func drawSelect(s tcell.Screen, x1, y1, x2, y2 int, sel bool) {
 	}
 	for row := y1; row <= y2; row++ {
 		for col := x1; col <= x2; col++ {
-			mainc, combc, style, width := s.GetContent(col, row)
+			mainc, combc, style, width, _ := s.GetContent(col, row)
 			if style == tcell.StyleDefault {
 				style = defStyle
 			}
-			style = style.Reverse(sel)
+			if sel {
+				style.Attrs |= tcell.AttrReverse
+			}
 			s.SetContent(col, row, mainc, combc, 1, style)
 			col += width - 1
 		}
@@ -120,10 +114,6 @@ func main() {
 		fmt.Fprintf(os.Stderr, "%v\n", e)
 		os.Exit(1)
 	}
-	defStyle = tcell.StyleDefault.
-		Background(tcell.ColorReset).
-		Foreground(tcell.ColorReset)
-	s.SetStyle(defStyle)
 	s.EnableMouse()
 	s.EnablePaste()
 	s.EnableFocus()
@@ -134,8 +124,7 @@ func main() {
 	keyfmt := "Keys: %s"
 	pastefmt := "Paste: [%d] %s"
 	focusfmt := "Focus: %s"
-	white := tcell.StyleDefault.
-		Foreground(tcell.ColorMidnightBlue).Background(tcell.ColorLightCoral)
+	white := tcell.Style{Fg: tcell.ColorMidnightBlue, Bg: tcell.ColorLightCoral}
 
 	mx, my := -1, -1
 	ox, oy := -1, -1
@@ -171,10 +160,8 @@ func main() {
 		s.Show()
 		bstr = ""
 		ev := <-s.Poll()
-		st := tcell.StyleDefault.Background(tcell.ColorRed)
-		up := tcell.StyleDefault.
-			Background(tcell.ColorBlue).
-			Foreground(tcell.ColorBlack)
+		st := tcell.Style{Bg: tcell.ColorRed}
+		up := tcell.Style{Bg: tcell.ColorBlue, Fg: tcell.ColorBlack}
 		w, h = s.Size()
 
 		// always clear any old selection box
@@ -204,20 +191,6 @@ func main() {
 				if ecnt > 1 {
 					s.Fini()
 					os.Exit(0)
-				}
-			} else if ev.Key() == tcell.KeyCtrlZ {
-				// CtrlZ doesn't really suspend the process, but we use it to execute a subshell.
-				if err := s.Suspend(); err == nil {
-					fmt.Printf("Executing shell (%s -l)...\n", shell)
-					fmt.Printf("Exit the shell to return to the demo.\n")
-					c := exec.Command(shell, "-l") // NB: -l works for cmd.exe too (ignored)
-					c.Stdin = os.Stdin
-					c.Stdout = os.Stdout
-					c.Stderr = os.Stderr
-					c.Run()
-					if err := s.Resume(); err != nil {
-						panic("failed to resume: " + err.Error())
-					}
 				}
 			} else {
 				ecnt = 0
@@ -287,7 +260,7 @@ func main() {
 					bg := theme[lchar%8]
 					fg := tcell.ColorBlack
 					drawBox(s, ox, oy, x, y,
-						up.Background(bg).Foreground(fg),
+						tcell.Style{Bg: bg, Fg: fg, Attrs: up.Attrs},
 						lchar)
 					ox, oy = -1, -1
 					bx, by = -1, -1

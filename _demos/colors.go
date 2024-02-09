@@ -57,7 +57,9 @@ func makebox(s tcell.Screen) {
 	gl := ' '
 
 	if s.Colors() == 0 {
-		st = st.Reverse(rand.Int()%2 == 0)
+		if rand.Int()%2 == 0 {
+			st.Attrs = tcell.AttrReverse
+		}
 		gl = glyphs[rand.Int()%len(glyphs)]
 	} else {
 
@@ -77,11 +79,11 @@ func makebox(s tcell.Screen) {
 			blu += blui
 
 		}
-		st = st.Background(tcell.NewRGBColor(red, grn, blu))
+		st.Bg = tcell.NewRGBColor(red, grn, blu)
 	}
 	for row := 0; row < lh; row++ {
 		for col := 0; col < lw; col++ {
-			s.SetCell(lx+col, ly+row, st, gl)
+			s.SetContent(lx+col, ly+row, gl, nil, 1, st)
 		}
 	}
 	s.Show()
@@ -107,9 +109,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	s.SetStyle(tcell.StyleDefault.
-		Foreground(tcell.ColorBlack).
-		Background(tcell.ColorWhite))
 	s.Clear()
 
 	quit := make(chan struct{})

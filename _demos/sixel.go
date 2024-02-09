@@ -56,7 +56,7 @@ func emitStr(s tcell.Screen, x, y int, style tcell.Style, str string) {
 func displayHelloWorld(s tcell.Screen) {
 	w, h := s.Size()
 	s.Clear()
-	style := tcell.StyleDefault.Foreground(tcell.ColorCadetBlue.TrueColor()).Background(tcell.ColorWhite)
+	style := Style{Fg: tcell.ColorCadetBlue.TrueColor(), Bg: tcell.ColorWhite}
 	emitStr(s, w/2-7, h/2, style, "Hello, World!")
 	emitStr(s, w/2-9, h/2+1, tcell.StyleDefault, "Press ESC to exit.")
 	emitStr(s, w/2-18, h/2+2, tcell.StyleDefault, "Press Enter to toggle sixel lock.")
@@ -133,11 +133,6 @@ func main() {
 		fmt.Fprintf(os.Stderr, "%v\n", e)
 		os.Exit(1)
 	}
-
-	defStyle := tcell.StyleDefault.
-		Background(tcell.ColorBlack).
-		Foreground(tcell.ColorWhite)
-	s.SetStyle(defStyle)
 
 	raw, err := loadImage("./logos/tcell.png")
 	if err != nil {

@@ -61,7 +61,7 @@ func TestClearScreen(t *testing.T) {
 }
 
 func TestSetCell(t *testing.T) {
-	st := StyleDefault.Background(ColorRed).Blink(true)
+	st := Style{Bg: ColorRed, Attrs: AttrBlink}
 	s := mkTestScreen(t)
 	defer s.Fini()
 	s.SetContent(2, 5, '@', nil, 1, st)
@@ -79,7 +79,7 @@ func TestSetCell(t *testing.T) {
 }
 
 func TestResize(t *testing.T) {
-	st := StyleDefault.Background(ColorYellow).Underline(true)
+	st := Style{Bg: ColorYellow, Attrs: AttrUnderline}
 	s := mkTestScreen(t)
 	defer s.Fini()
 	s.SetContent(2, 5, '&', nil, 1, st)

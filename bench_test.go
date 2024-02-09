@@ -47,7 +47,7 @@ func benchmarkSimulation(b *testing.B, resize bool, width, height int) {
 		b.Fatalf("Init screen: %v", err)
 	}
 	s.SetSize(width, height)
-	st := StyleDefault.Foreground(ColorBlack).Background(ColorWhite)
+	st := Style{Fg: ColorBlack, Bg: ColorWhite}
 	s.Fill(' ', st)
 
 	b.ResetTimer()
@@ -86,7 +86,7 @@ func benchmarkTscreen(b *testing.B, resize bool, width, height int) {
 	}
 	tty.setWindowSize(width, height)
 	s.resize()
-	st := StyleDefault.Foreground(ColorBlack).Background(ColorWhite)
+	st := Style{Fg: ColorBlack, Bg: ColorWhite}
 	s.GetCells().Fill(' ', st)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -144,11 +144,13 @@ func makeBox(s Screen, i int) {
 	lh := i % (h - ly)
 	st := StyleDefault
 	gl := ' '
-	st = st.Reverse(i%2 == 0)
+	if i%2 == 0 {
+		st.Attrs |= AttrReverse
+	}
 	gl = glyphs[i%len(glyphs)]
 
 	if i%5 != 0 {
-		st = st.Foreground(Color(i)%(ColorYellowGreen-ColorValid) + ColorValid)
+		st.Fg = Color(i)%(ColorYellowGreen-ColorValid) + ColorValid
 	}
 
 	for row := 0; row < lh; row++ {

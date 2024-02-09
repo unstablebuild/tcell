@@ -148,22 +148,25 @@ func TestColorNone(t *testing.T) {
 	s := mkTestScreen(t)
 	s.Init()
 	s.SetSize(80, 24)
-	st := StyleDefault.Foreground(ColorBlack).Background(ColorWhite)
+	st := Style{Fg: ColorBlack, Bg: ColorWhite}
 	s.Fill(' ', st)
 	if _, _, s1, _, _ := s.GetContent(0, 0); s1 != st {
-		t.Errorf("Wrong style! fg %s bg %s", s1.fg.String(), s1.bg.String())
+		t.Errorf("Wrong style! fg %s bg %s", s1.Fg.String(), s1.Bg.String())
 	}
-	st2 := st.Foreground(ColorNone).Background(ColorNone)
+	st2 := Style{Fg: ColorNone, Bg: ColorNone}
 	s.Fill('X', st2)
 	if _, _, s1, _, _ := s.GetContent(0, 0); s1 != st {
-		t.Errorf("Wrong style! fg %s bg %s", s1.fg.String(), s1.bg.String())
+		t.Errorf("Wrong style! fg %s bg %s", s1.Fg.String(), s1.Bg.String())
 	}
-	red := st.Foreground(ColorRed)
+	red := st
+	red.Fg = ColorRed
 	s.SetContent(1, 0, ' ', nil, 1, red)
-	if _, _, s1, _, _ := s.GetContent(1, 0); s1 != red.Background(st.bg) {
-		t.Errorf("Wrong style! fg %s bg %s", s1.fg.String(), s1.bg.String())
+	st3 := red
+	red.Bg = st.Bg
+	if _, _, s1, _, _ := s.GetContent(1, 0); s1 != st3 {
+		t.Errorf("Wrong style! fg %s bg %s", s1.Fg.String(), s1.Bg.String())
 	}
 	if _, _, s1, _, _ := s.GetContent(0, 0); s1 != st {
-		t.Errorf("Wrong style! fg %s bg %s", s1.fg.String(), s1.bg.String())
+		t.Errorf("Wrong style! fg %s bg %s", s1.Fg.String(), s1.Bg.String())
 	}
 }

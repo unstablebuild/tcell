@@ -44,12 +44,13 @@ func makebox(s tcell.Screen) {
 	st := tcell.StyleDefault
 	gl := ' '
 	if s.Colors() > 256 {
-		rgb := tcell.NewHexColor(int32(rand.Int() & 0xffffff))
-		st = st.Background(rgb)
+		st.Bg = tcell.NewHexColor(int32(rand.Int() & 0xffffff))
 	} else if s.Colors() > 1 {
-		st = st.Background(tcell.Color(rand.Int()%s.Colors()) | tcell.ColorValid)
+		st.Bg = tcell.Color(rand.Int()%s.Colors()) | tcell.ColorValid
 	} else {
-		st = st.Reverse(rand.Int()%2 == 0)
+		if rand.Int()%2 == 0 {
+			st.Attrs |= tcell.AttrReverse
+		}
 		gl = glyphs[rand.Int()%len(glyphs)]
 	}
 
@@ -73,9 +74,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	s.SetStyle(tcell.StyleDefault.
-		Foreground(tcell.ColorBlack).
-		Background(tcell.ColorWhite))
+	global := tcell.Style{Fg: tcell.ColorBlack, Bg: tcell.ColorWhite}
+	s.SetStyle(global)
 	s.Clear()
 
 	quit := make(chan struct{})
