@@ -17,7 +17,30 @@ package tcell
 import (
 	ic "image/color"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
+
+func TestNewColor(t *testing.T) {
+	suite := []struct {
+		r, g, b int32
+		named   bool
+	}{
+		{0xFF, 0, 0, true},
+		{0, 0xFF, 0, true},
+		{0, 0, 0xFF, true},
+		{0, 0, 0, true},
+		{255, 255, 255, true},
+		{0xC0, 0xC0, 0xC0, true},
+		{0, 0, 0x80, true},
+		{0xf0, 0xf0, 0xf0, false},
+	}
+
+	for i, test := range suite {
+		color := NewColor(test.r, test.g, test.b)
+		assert.Equal(t, test.named, color.Name(false) != "", i)
+	}
+}
 
 func TestColorValues(t *testing.T) {
 	var values = []struct {
