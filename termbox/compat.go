@@ -143,6 +143,10 @@ const (
 	EventInterrupt
 	EventError
 	EventRaw
+	EventPasteStart
+	EventPasteEnd
+	EventFocus
+	EventUnfocus
 )
 
 // Keys codes.
@@ -248,6 +252,16 @@ func NewEvent(tev tcell.Event) Event {
 		}
 		data, _ := tev.Data().([]byte)
 		return Event{Type: EventInterrupt, Raw: data}
+	case *tcell.EventPaste:
+		if tev.Start() {
+			return Event{Type: EventPasteStart}
+		}
+		return Event{Type: EventPasteEnd}
+	case *tcell.EventFocus:
+		if tev.Focused {
+			return Event{Type: EventFocus}
+		}
+		return Event{Type: EventUnfocus}
 	case *tcell.EventResize:
 		w, h := tev.Size()
 		return Event{Type: EventResize, Width: w, Height: h}
@@ -360,7 +374,7 @@ func PublishEvent(ev Event) bool {
 		tev = tcell.NewEventInterrupt(ev.Raw)
 	case EventError:
 		tev = tcell.NewEventError(ev.Err)
-	default /* + EventRaw + EventMouse */ :
+	default /* + EventRaw + EventMouse + EventPaste */ :
 		// silently ignore for unsupported events
 		return true
 	}
