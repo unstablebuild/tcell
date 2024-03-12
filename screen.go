@@ -108,6 +108,9 @@ type Screen interface {
 	// DisableFocus disables reporting of focus events.
 	DisableFocus()
 
+	// Bell makes an audible noise.
+	Bell()
+
 	// HasMouse returns true if the terminal (apparently) supports a
 	// mouse.  Note that the return value of true doesn't guarantee that
 	// a mouse/pointing device is present; a false return definitely
@@ -198,6 +201,7 @@ type screenImpl interface {
 	DisablePaste()
 	EnableFocus()
 	DisableFocus()
+	Bell()
 	HasMouse() bool
 	Colors() int
 	Show()

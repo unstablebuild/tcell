@@ -913,6 +913,12 @@ func (t *tScreen) EnablePaste() {
 	t.enablePasting(true)
 }
 
+func (t *tScreen) Bell() {
+	if t.ti.Bell != "" {
+		t.TPutsString(t.ti.Bell)
+	}
+}
+
 func (t *tScreen) DisablePaste() {
 	t.pasteEnabled = false
 	t.enablePasting(false)
