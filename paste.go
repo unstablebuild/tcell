@@ -23,6 +23,7 @@ import (
 // Then a number of keys will be sent to indicate that the content
 // is pasted in.  At the end, an event with .Start() false will be sent.
 type EventPaste struct {
+	raw   []byte
 	start bool
 	t     time.Time
 }
@@ -42,7 +43,12 @@ func (ev *EventPaste) End() bool {
 	return !ev.start
 }
 
+// Raw returns the raw bytes of this event.
+func (ev *EventPaste) Raw() []byte {
+	return ev.raw
+}
+
 // NewEventPaste returns a new EventPaste.
-func NewEventPaste(start bool) *EventPaste {
-	return &EventPaste{t: time.Now(), start: start}
+func NewEventPaste(start bool, raw []byte) *EventPaste {
+	return &EventPaste{raw: raw, t: time.Now(), start: start}
 }

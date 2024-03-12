@@ -254,9 +254,9 @@ func NewEvent(tev tcell.Event) Event {
 		return Event{Type: EventInterrupt, Raw: data}
 	case *tcell.EventPaste:
 		if tev.Start() {
-			return Event{Type: EventPasteStart}
+			return Event{Type: EventPasteStart, Raw: tev.Raw()}
 		}
-		return Event{Type: EventPasteEnd}
+		return Event{Type: EventPasteEnd, Raw: tev.Raw()}
 	case *tcell.EventFocus:
 		if tev.Focused {
 			return Event{Type: EventFocus}

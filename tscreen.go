@@ -1294,13 +1294,14 @@ func (t *tScreen) parseFunctionKey(buf *bytes.Buffer, evs *[]Event) (bool, bool)
 				mod |= ModAlt
 				t.escaped = false
 			}
+			raw := cloneBuf(buf, len(esc))
 			switch k.key {
 			case keyPasteStart:
-				*evs = append(*evs, NewEventPaste(true))
+				*evs = append(*evs, NewEventPaste(true, raw))
 			case keyPasteEnd:
-				*evs = append(*evs, NewEventPaste(false))
+				*evs = append(*evs, NewEventPaste(false, raw))
 			default:
-				*evs = append(*evs, NewEventKey(k.key, r, mod, cloneBuf(buf, len(esc))))
+				*evs = append(*evs, NewEventKey(k.key, r, mod, raw))
 			}
 			for i := 0; i < len(esc); i++ {
 				_, _ = buf.ReadByte()
