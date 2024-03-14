@@ -57,6 +57,19 @@ func (cb *CellBuffer) SetContentWidth(x int, y int,
 	}
 }
 
+// UnionStyle computes the set union between a and b,
+// that is it overrides the set of attributes at x, y that contain
+// all the bit flags set in a, b or both, and uses the color
+// defined in b or if not set, uses the color in a.
+func (cb *CellBuffer) UnionStyle(x int, y int, style Style) {
+	if x >= cb.w || y >= cb.h {
+		return
+	}
+
+	c := &cb.cells[(y*cb.w)+x]
+	c.currStyle = unionStyle(c.currStyle, style)
+}
+
 // GetContent returns the contents of a character cell, including the
 // primary rune, any combining character runes (which will usually be
 // nil), the style, and the display width in cells.
@@ -181,4 +194,16 @@ func (cb *CellBuffer) Fill(r rune, style Style) {
 		c.currStyle = style
 		c.width = 1
 	}
+}
+
+func unionStyle(a, b Style) Style {
+	retFgColor := b.Fg
+	retBgColor := b.Bg
+	if b.Fg == ColorDefault {
+		retFgColor = a.Fg
+	}
+	if b.Bg == ColorDefault {
+		retBgColor = a.Bg
+	}
+	return Style{Fg: retFgColor, Bg: retBgColor, Attrs: (a.Attrs | b.Attrs)}
 }

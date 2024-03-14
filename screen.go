@@ -57,6 +57,12 @@ type Screen interface {
 	// last column will be replaced with a single width space on output.
 	SetContent(x int, y int, primary rune, combining []rune, width int, style Style)
 
+	// UnionStyle computes the set union between a and b,
+	// that is overrides a set of attributes that contain
+	// all the bit flags set in a, b or both, and uses the color
+	// defined in b or if not set, uses the color in a.
+	UnionStyle(x int, y int, style Style)
+
 	// SetStyle sets the default style to use when clearing the screen
 	// or when StyleDefault is specified.  If it is also StyleDefault,
 	// then whatever system/terminal default is relevant will be used.
@@ -227,6 +233,10 @@ func (b *baseScreen) Fill(r rune, style Style) {
 
 func (b *baseScreen) SetContent(x, y int, mainc rune, combc []rune, width int, st Style) {
 	b.cb.SetContentWidth(x, y, mainc, combc, width, st)
+}
+
+func (b *baseScreen) UnionStyle(x int, y int, style Style) {
+	b.cb.UnionStyle(x, y, style)
 }
 
 func (b *baseScreen) GetContent(x, y int) (rune, []rune, Style, int, bool) {
