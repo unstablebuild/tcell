@@ -21,8 +21,9 @@ import (
 // EventInterrupt is a generic wakeup event.  Its can be used to
 // to request a redraw.  It can carry an arbitrary payload, as well.
 type EventInterrupt struct {
-	t time.Time
-	v interface{}
+	t        time.Time
+	data     any
+	metadata any
 }
 
 // When returns the time when this event was created.
@@ -31,11 +32,16 @@ func (ev *EventInterrupt) When() time.Time {
 }
 
 // Data is used to obtain the opaque event payload.
-func (ev *EventInterrupt) Data() interface{} {
-	return ev.v
+func (ev *EventInterrupt) Data() any {
+	return ev.data
+}
+
+// Metadata is used to obtain the metadata of the event
+func (ev *EventInterrupt) Metadata() any {
+	return ev.metadata
 }
 
 // NewEventInterrupt creates an EventInterrupt with the given payload.
-func NewEventInterrupt(data interface{}) *EventInterrupt {
-	return &EventInterrupt{t: time.Now(), v: data}
+func NewEventInterrupt(data, metadata any) *EventInterrupt {
+	return &EventInterrupt{t: time.Now(), data: data, metadata: metadata}
 }

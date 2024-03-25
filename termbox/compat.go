@@ -121,17 +121,18 @@ type Key tcell.Key
 
 // Event represents an event like a key press, mouse action, or window resize.
 type Event struct {
-	Type   EventType
-	Mod    Modifier
-	Key    Key
-	Ch     rune
-	Width  int
-	Height int
-	Err    error
-	MouseX int
-	MouseY int
-	N      int
-	Raw    []byte
+	Type     EventType
+	Mod      Modifier
+	Key      Key
+	Ch       rune
+	Width    int
+	Height   int
+	Err      error
+	MouseX   int
+	MouseY   int
+	N        int
+	Raw      []byte
+	Metadata any
 }
 
 // Event types.
@@ -251,7 +252,7 @@ func NewEvent(tev tcell.Event) Event {
 			return Event{Type: EventNone}
 		}
 		data, _ := tev.Data().([]byte)
-		return Event{Type: EventInterrupt, Raw: data}
+		return Event{Type: EventInterrupt, Raw: data, Metadata: tev.Metadata()}
 	case *tcell.EventPaste:
 		if tev.Start() {
 			return Event{Type: EventPasteStart, Raw: tev.Raw()}
@@ -347,7 +348,7 @@ func PollEvent() Event {
 
 // Interrupt posts an interrupt event.
 func Interrupt() {
-	screen.PostEvent(tcell.NewEventInterrupt(nil))
+	screen.PostEvent(tcell.NewEventInterrupt(nil, nil))
 }
 
 // PublishEvent tries to publish an event into the event stream.
@@ -357,7 +358,7 @@ func PublishEvent(ev Event) bool {
 	var tev tcell.Event
 	switch ev.Type {
 	case EventNone:
-		tev = tcell.NewEventInterrupt(EventNone)
+		tev = tcell.NewEventInterrupt(EventNone, ev.Metadata)
 	case EventKey:
 		var mod tcell.ModMask
 		if ev.Mod&ModAlt != 0 {
@@ -371,7 +372,7 @@ func PublishEvent(ev Event) bool {
 	case EventResize:
 		tev = tcell.NewEventResize(ev.Width, ev.Height)
 	case EventInterrupt:
-		tev = tcell.NewEventInterrupt(ev.Raw)
+		tev = tcell.NewEventInterrupt(ev.Raw, ev.Metadata)
 	case EventError:
 		tev = tcell.NewEventError(ev.Err)
 	default /* + EventRaw + EventMouse + EventPaste */ :
