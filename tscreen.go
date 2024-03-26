@@ -190,7 +190,7 @@ func (t *tScreen) Init() error {
 	}
 
 	t.quit = make(chan struct{})
-	t.eventQ = make(chan Event, 10)
+	t.eventQ = make(chan Event, 100)
 
 	t.cx = -1
 	t.cy = -1
