@@ -2,7 +2,7 @@
 
 package dtterm
 
-import "github.com/ernestrc/tcell/v3/terminfo"
+import "github.com/unstablebuild/tcell/v3/terminfo"
 
 func init() {
 

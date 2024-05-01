@@ -25,8 +25,8 @@ import (
 	// also don't support Android here, because you really don't want
 	// to run external programs there.  Generally the android terminals
 	// will be automatically included anyway.
-	"github.com/ernestrc/tcell/v3/terminfo"
-	"github.com/ernestrc/tcell/v3/terminfo/dynamic"
+	"github.com/unstablebuild/tcell/v3/terminfo"
+	"github.com/unstablebuild/tcell/v3/terminfo/dynamic"
 )
 
 func loadDynamicTerminfo(term string) (*terminfo.Terminfo, error) {

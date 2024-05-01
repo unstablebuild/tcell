@@ -1,4 +1,4 @@
-module github.com/ernestrc/tcell/v3
+module github.com/unstablebuild/tcell/v3
 
 go 1.21
 
