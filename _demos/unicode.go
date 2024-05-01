@@ -23,7 +23,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/ernestrc/tcell/v3"
+	"github.com/unstablebuild/tcell/v3"
 	"github.com/rivo/uniseg"
 )
 

@@ -24,9 +24,9 @@ package base
 import (
 	// The following imports just register themselves --
 	// thse are the terminal types we aggregate in this package.
-	_ "github.com/ernestrc/tcell/v3/terminfo/a/ansi"
-	_ "github.com/ernestrc/tcell/v3/terminfo/v/vt100"
-	_ "github.com/ernestrc/tcell/v3/terminfo/v/vt102"
-	_ "github.com/ernestrc/tcell/v3/terminfo/v/vt220"
-	_ "github.com/ernestrc/tcell/v3/terminfo/x/xterm"
+	_ "github.com/unstablebuild/tcell/v3/terminfo/a/ansi"
+	_ "github.com/unstablebuild/tcell/v3/terminfo/v/vt100"
+	_ "github.com/unstablebuild/tcell/v3/terminfo/v/vt102"
+	_ "github.com/unstablebuild/tcell/v3/terminfo/v/vt220"
+	_ "github.com/unstablebuild/tcell/v3/terminfo/x/xterm"
 )
