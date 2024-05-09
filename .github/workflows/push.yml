@@ -1,0 +1,41 @@
+name: Go
+on: push
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Set up Go 1.21
+      uses: actions/setup-go@v5
+      with:
+        go-version: 1.21
+      id: go
+
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v4
+
+    - name: Get dependencies
+      run: |
+        go get -v -t -d ./.../...
+
+    - name: Build
+      run: go build ./...
+
+    - name: Test
+      run: go test ./...
+
+  notify:
+    if: always()
+    needs:
+      - build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Slack notification with workflow result.
+        uses: ScribeMD/slack-templates@0.6.38
+        with:
+          bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+          channel-id: C0727A4EXGB 
+          template: result
+          results: "${{ join(needs.*.result, ' ') }}"
