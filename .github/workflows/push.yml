@@ -58,6 +58,17 @@ jobs:
         name: Many Tests
         run: go test -count=100 -timeout=30s
 
+  crosscompile:
+    name: Run ./test_crosscompile.sh
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Run ./test_crosscompile.sh
+        run: ./test_crosscompile.sh
+
   notify:
     if: always()
     needs:
