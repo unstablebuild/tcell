@@ -72,7 +72,8 @@ jobs:
   notify:
     if: always()
     needs:
-      - build
+      - test
+      - crosscompile
     runs-on: ubuntu-latest
     steps:
       - name: Send Slack notification with workflow result.
