@@ -56,7 +56,7 @@ jobs:
         run: ./test_crosscompile.sh
 
   notify:
-    if: always()
+    if: always() && github.event_name != 'pull_request'
     needs:
       - test
       - crosscompile
