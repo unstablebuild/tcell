@@ -18,18 +18,20 @@ import (
 	"fmt"
 	ic "image/color"
 	"strconv"
+
+	"github.com/sirupsen/logrus"
 )
 
 // Color represents a color.  The low numeric values are the same as used
-// by ECMA-48, and beyond that XTerm.  A 24-bit RGB value may be used by
-// adding in the ColorIsRGB flag.  For Color names we use the W3C approved
+// by ECMA-48, and beyond that XTerm. A 24-bit RGB value may be used by
+// adding in the ColorIsRGB flag. For Color names we use the W3C approved
 // color names.
 //
 // We use a 64-bit integer to allow future expansion if we want to add an
 // 8-bit alpha, while still leaving us some room for extra options.
 //
 // Note that on various terminals colors may be approximated however, or
-// not supported at all.  If no suitable representation for a color is known,
+// not supported at all. If no suitable representation for a color is known,
 // the library will simply not set any color, deferring to whatever default
 // attributes the terminal uses.
 type Color uint64
@@ -52,6 +54,10 @@ const (
 	// ColorSpecial is a flag used to indicate that the values have
 	// special meaning, and live outside of the color space(s).
 	ColorSpecial Color = 1 << 34
+
+	// ColorHasAlpha is a flag used to indicate that an 8-bit alpha channel is
+	// stored (right after the 24 color bits).
+	ColorHasAlpha Color = 1 << 35
 )
 
 // Note that the order of these options is important -- it follows the
@@ -1384,7 +1390,13 @@ func (c Color) CSS() string {
 	if !c.Valid() {
 		return ""
 	}
-	return fmt.Sprintf("#%06X", c.Hex())
+	hex := c.Hex()
+	repr := fmt.Sprintf("#%06X", hex&0xffffff)
+	if c&ColorHasAlpha == ColorHasAlpha {
+		alpha := fmt.Sprintf("%02X", (c.Hex()>>24)&0xff)
+		repr = fmt.Sprintf("%s%s", repr, alpha)
+	}
+	return repr
 }
 
 // String implements fmt.Stringer to return either the
@@ -1420,13 +1432,16 @@ func (c Color) Name(css ...bool) string {
 }
 
 // Hex returns the color's hexadecimal RGB 24-bit value with each component
-// consisting of a single byte, R << 16 | G << 8 | B.  If the color
+// consisting of a single byte, A << 24 | R << 16 | G << 8 | B.  If the color
 // is unknown or unset, -1 is returned.
 func (c Color) Hex() int32 {
 	if !c.Valid() {
 		return -1
 	}
 	if c&ColorIsRGB != 0 {
+		if c&ColorHasAlpha != 0 {
+			return int32(c & 0xffffffff)
+		}
 		return int32(c & 0xffffff)
 	}
 	if v, ok := ColorValues[c]; ok {
@@ -1436,7 +1451,7 @@ func (c Color) Hex() int32 {
 }
 
 // RGB returns the red, green, and blue components of the color, with
-// each component represented as a value 0-255.  In the event that the
+// each component represented as a value 0-255. In the event that the
 // color cannot be broken up (not set usually), -1 is returned for each value.
 func (c Color) RGB() (int32, int32, int32) {
 	v := c.Hex()
@@ -1444,6 +1459,17 @@ func (c Color) RGB() (int32, int32, int32) {
 		return -1, -1, -1
 	}
 	return (v >> 16) & 0xff, (v >> 8) & 0xff, v & 0xff
+}
+
+// RGB returns the red, green, blue and alpha components of the color, with
+// each component represented as a value 0-255. In the event that the
+// color cannot be broken up (not set usually), -1 is returned for each value.
+func (c Color) RGBA() (int32, int32, int32, int32) {
+	v := c.Hex()
+	if v < 0 {
+		return -1, -1, -1, -1
+	}
+	return (v >> 16) & 0xff, (v >> 8) & 0xff, v & 0xff, (v >> 24) & 0xff
 }
 
 // TrueColor returns the true color (RGB) version of the provided color.
@@ -1465,6 +1491,14 @@ func NewRGBColor(r, g, b int32) Color {
 	return NewHexColor(((r & 0xff) << 16) | ((g & 0xff) << 8) | (b & 0xff))
 }
 
+// NewRGBAColor returns a new color with the given red, green, blue and alpha values.
+// Each value must be represented in the range 0-255.
+func NewRGBAColor(r, g, b, a int32) Color {
+	res := uint64(((a & 0xff) << 24) | ((r & 0xff) << 16) | ((g & 0xff) << 8) | (b & 0xff))
+	logrus.Infof("RAMON.WIP bad logic? %064b", res)
+	return NewHexAlphaColor(res)
+}
+
 // NewColor returns a new color with the given red, green, and blue values.
 // Each value must be represented in the range 0-255. As opposed to NewRGBColor,
 // if the color happens to be one of ColorNames, then a named color is returned.
@@ -1480,6 +1514,11 @@ func NewColor(r, g, b int32) Color {
 // NewHexColor returns a color using the given 24-bit RGB value.
 func NewHexColor(v int32) Color {
 	return ColorIsRGB | Color(v) | ColorValid
+}
+
+// NewHexColor returns a color using the given 24-bit RGB value.
+func NewHexAlphaColor(v int32) Color {
+	return ColorHasAlpha | ColorIsRGB | Color(v) | ColorValid
 }
 
 // GetColor creates a Color from a color name (W3C name). A hex value may
