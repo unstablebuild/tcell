@@ -633,7 +633,7 @@ func (t *tScreen) sendFgBg(fg Color, bg Color, attr AttrMask) AttrMask {
 	return attr
 }
 
-func (t *tScreen) drawCell(x, y int) int {
+func (t *tScreen) drawCell(x, y int) uint8 {
 	c := t.cells.GetCell(x, y)
 	dirty := t.cells.Dirty(c)
 	mainc, combc, style, width := t.cells.ProcessCell(c)
@@ -645,7 +645,7 @@ func (t *tScreen) drawCell(x, y int) int {
 	return width
 }
 
-func (t *tScreen) doDrawCell(x, y int, mainc rune, combc []rune, style Style, width int) int {
+func (t *tScreen) doDrawCell(x, y int, mainc rune, combc []rune, style Style, width uint8) uint8 {
 	ti := t.ti
 	if y == t.h-1 && x == t.w-1 && t.ti.AutoMargin && ti.InsertChar != "" {
 		// our solution is somewhat goofy.
@@ -708,10 +708,10 @@ func (t *tScreen) doDrawCell(x, y int, mainc rune, combc []rune, style Style, wi
 	// wide character, and to ensure that we emit exactly one regular
 	// character followed up by any residual combing characters
 
-	if x+width > t.w {
+	if x+int(width) > t.w {
 		width = 1
 		t.writeStringBuffer(" ")
-		t.cx += width
+		t.cx += int(width)
 		return width
 	}
 
@@ -723,7 +723,7 @@ func (t *tScreen) doDrawCell(x, y int, mainc rune, combc []rune, style Style, wi
 		t.writeDataBuffer(buf[:n])
 	}
 
-	t.cx += width
+	t.cx += int(width)
 	if width > 1 {
 		t.cx = -1
 	}
@@ -849,7 +849,7 @@ func (t *tScreen) draw() {
 			continue
 		}
 
-		for j := 1; j < width && x+j < t.w; j++ {
+		for j := 1; j < int(width) && x+j < t.w; j++ {
 			// this is necessary so that if we ever
 			// go back to drawing that cell, we
 			// actually will re-draw it.

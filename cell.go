@@ -21,7 +21,7 @@ type Cell struct {
 	currStyle Style
 	lastMain  rune
 	lastStyle Style
-	width     int
+	width     uint8
 }
 
 // CellBuffer represents a two-dimensional array of character cells.
@@ -40,7 +40,7 @@ type CellBuffer struct {
 // to pass the grapheme width if known. The behaviour is undefined
 // if the passed width is ever 0.
 func (cb *CellBuffer) SetContentWidth(x int, y int,
-	mainc rune, combc []rune, width int, style Style,
+	mainc rune, combc []rune, width uint8, style Style,
 ) {
 	if x >= cb.w || y >= cb.h {
 		return
@@ -52,7 +52,8 @@ func (cb *CellBuffer) SetContentWidth(x int, y int,
 	c.currMain = mainc
 	c.currStyle = style
 
-	for i := 1; i < width; i++ {
+	iwidth := int(width)
+	for i := 1; i < iwidth; i++ {
 		cb.SetDirty(x+i, y)
 	}
 }
@@ -74,7 +75,7 @@ func (cb *CellBuffer) UnionStyle(x int, y int, style Style) {
 // primary rune, any combining character runes (which will usually be
 // nil), the style, and the display width in cells.
 func (cb *CellBuffer) GetContent(x, y int) (
-	mainc rune, combc []rune, style Style, width int, dirty bool,
+	mainc rune, combc []rune, style Style, width uint8, dirty bool,
 ) {
 	c := cb.GetCell(x, y)
 	mainc, combc, style, width = cb.ProcessCell(c)
@@ -89,7 +90,7 @@ func (cb *CellBuffer) GetCell(x, y int) *Cell {
 
 // ProcessCell unwraps the given cell
 func (cb *CellBuffer) ProcessCell(c *Cell) (
-	mainc rune, combc []rune, style Style, width int,
+	mainc rune, combc []rune, style Style, width uint8,
 ) {
 	mainc = c.currMain
 	combc = c.currComb

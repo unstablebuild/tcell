@@ -126,7 +126,7 @@ func (s *simscreen) SetStyle(style Style) {
 	s.style = style
 }
 
-func (s *simscreen) drawCell(x, y int) int {
+func (s *simscreen) drawCell(x, y int) uint8 {
 
 	mainc, combc, style, width, dirty := s.back.GetContent(x, y)
 	if !dirty || x >= s.physw || y >= s.physh {
@@ -139,7 +139,7 @@ func (s *simscreen) drawCell(x, y int) int {
 	}
 	simc.Style = style
 
-	if x > s.physw-width {
+	if x > s.physw-int(width) {
 		simc.Runes = []rune{' '}
 		simc.Bytes = []byte{' '}
 		s.back.ClearDirty(x, y)
@@ -203,7 +203,7 @@ func (s *simscreen) draw() {
 		for x := 0; x < w; x++ {
 			width := s.drawCell(x, y)
 			if width > 1 {
-				x += width - 1
+				x += int(width) - 1
 			}
 		}
 	}

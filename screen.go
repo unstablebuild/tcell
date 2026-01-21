@@ -40,7 +40,7 @@ type Screen interface {
 	// be displayed if Show() or Sync() is called.  The width is the width
 	// in screen cells; most often this will be 1, but some East Asian
 	// characters and emoji require two cells.
-	GetContent(x, y int) (primary rune, combining []rune, style Style, width int, dirty bool)
+	GetContent(x, y int) (primary rune, combining []rune, style Style, width uint8, dirty bool)
 
 	// SetContent sets the contents of the given cell location.  If
 	// the coordinates are out of range, then the operation is ignored.
@@ -55,7 +55,7 @@ type Screen interface {
 	// and attempts to place character at next cell to the right will have
 	// undefined effects.  Wide runes that are printed in the
 	// last column will be replaced with a single width space on output.
-	SetContent(x int, y int, primary rune, combining []rune, width int, style Style)
+	SetContent(x int, y int, primary rune, combining []rune, width uint8, style Style)
 
 	// UnionStyle computes the set union between a and b,
 	// that is overrides a set of attributes that contain
@@ -231,7 +231,7 @@ func (b *baseScreen) Fill(r rune, style Style) {
 	b.cb.Fill(r, style)
 }
 
-func (b *baseScreen) SetContent(x, y int, mainc rune, combc []rune, width int, st Style) {
+func (b *baseScreen) SetContent(x, y int, mainc rune, combc []rune, width uint8, st Style) {
 	b.cb.SetContentWidth(x, y, mainc, combc, width, st)
 }
 
@@ -239,6 +239,6 @@ func (b *baseScreen) UnionStyle(x int, y int, style Style) {
 	b.cb.UnionStyle(x, y, style)
 }
 
-func (b *baseScreen) GetContent(x, y int) (rune, []rune, Style, int, bool) {
+func (b *baseScreen) GetContent(x, y int) (rune, []rune, Style, uint8, bool) {
 	return b.cb.GetContent(x, y)
 }
