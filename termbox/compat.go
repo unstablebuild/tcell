@@ -236,7 +236,10 @@ const (
 
 // Modifiers.
 const (
-	ModAlt = Modifier(tcell.ModAlt)
+	ModAlt   = Modifier(tcell.ModAlt)
+	ModShift = Modifier(tcell.ModShift)
+	ModCtrl  = Modifier(tcell.ModCtrl)
+	ModMeta  = Modifier(tcell.ModMeta)
 )
 
 var (
@@ -310,10 +313,7 @@ func NewEvent(tev tcell.Event) Event {
 				k = tcell.Key(0)
 			}
 		}
-		var mod Modifier
-		if tev.Modifiers()&tcell.ModAlt != 0 {
-			mod = ModAlt
-		}
+		mod := Modifier(tev.Modifiers())
 
 		return Event{
 			Type: EventKey,
@@ -360,10 +360,7 @@ func PublishEvent(ev Event) bool {
 	case EventNone:
 		tev = tcell.NewEventInterrupt(EventNone, ev.Metadata)
 	case EventKey:
-		var mod tcell.ModMask
-		if ev.Mod&ModAlt != 0 {
-			mod = tcell.ModAlt
-		}
+		mod := tcell.ModMask(ev.Mod)
 		k := tcell.Key(ev.Key)
 		if ev.Ch != 0 {
 			k = tcell.KeyRune
