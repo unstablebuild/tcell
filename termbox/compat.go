@@ -103,7 +103,7 @@ func SetInputMode(mode InputMode) InputMode {
 		return InputEsc
 	}
 	if mode&InputMouse != 0 {
-		screen.EnableMouse()
+		screen.EnableMouse(tcell.MouseButtonEvents, tcell.MouseDragEvents)
 	} else {
 		screen.DisableMouse()
 	}

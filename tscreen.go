@@ -1165,16 +1165,22 @@ func (t *tScreen) parseSgrMouse(buf *bytes.Buffer, evs *[]Event) (bool, bool) {
 				btn &^= 0x40
 				t.buttondn = false
 			} else if motion {
-				/*
-				 * Some broken terminals appear to send
-				 * mouse button one motion events, instead of
-				 * encoding 35 (no buttons) into these events.
-				 * We resolve these by looking for a non-motion
-				 * event first.
-				 */
 				if !t.buttondn {
-					btn |= 3
-					btn &^= 0x40
+					if btn&3 != 3 {
+						// A real button (left, middle, right) with the
+						// motion bit set but no prior non-motion press.
+						// Some terminals always set the motion bit, even
+						// on initial button press events (e.g. in mode
+						// 1003). Treat this as a genuine button press.
+						t.buttondn = true
+					} else {
+						// No button, just motion. Some broken terminals
+						// send button-one motion events instead of
+						// encoding 35 (no buttons). We resolve these by
+						// looking for a non-motion event first.
+						btn |= 3
+						btn &^= 0x40
+					}
 				}
 			} else if !scroll {
 				t.buttondn = true
