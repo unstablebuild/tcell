@@ -18,6 +18,7 @@ import (
 	"fmt"
 	ic "image/color"
 	"strconv"
+	"sync"
 )
 
 // Color represents a color.  The low numeric values are the same as used
@@ -450,6 +451,80 @@ const (
 	ColorLightSlateGrey = ColorLightSlateGray
 	ColorSlateGrey      = ColorSlateGray
 )
+
+// colorMu protects ColorValues, ValuesColor, and ColorNames from concurrent
+// read/write access. Internal reads use RLock; external code must use the
+// Get*/Set* helpers instead of accessing the maps directly.
+var colorMu sync.RWMutex
+
+// GetColorValues returns a shallow clone of the ColorValues map.
+// The caller may read or mutate the returned map without synchronization
+// concerns; it is independent of the global state.
+func GetColorValues() map[Color]int32 {
+	colorMu.RLock()
+	m := make(map[Color]int32, len(ColorValues))
+	for k, v := range ColorValues {
+		m[k] = v
+	}
+	colorMu.RUnlock()
+	return m
+}
+
+// GetValuesColor returns a shallow clone of the ValuesColor map (the
+// reverse mapping from RGB hex values to named Colors).
+func GetValuesColor() map[int32]Color {
+	colorMu.RLock()
+	m := make(map[int32]Color, len(ValuesColor))
+	for k, v := range ValuesColor {
+		m[k] = v
+	}
+	colorMu.RUnlock()
+	return m
+}
+
+// GetColorNames returns a shallow clone of the ColorNames map.
+func GetColorNames() map[string]Color {
+	colorMu.RLock()
+	m := make(map[string]Color, len(ColorNames))
+	for k, v := range ColorNames {
+		m[k] = v
+	}
+	colorMu.RUnlock()
+	return m
+}
+
+// SetColorValue sets one entry in the global ColorValues and ValuesColor
+// maps, creating or overwriting the mapping in both directions.
+func SetColorValue(c Color, hex int32) {
+	colorMu.Lock()
+	ColorValues[c] = hex
+	ValuesColor[hex] = c
+	colorMu.Unlock()
+}
+
+// SetColorValues replaces the contents of both ColorValues and ValuesColor
+// with the entries from m. Existing entries not present in m are removed.
+func SetColorValues(m map[Color]int32) {
+	colorMu.Lock()
+	clear(ColorValues)
+	clear(ValuesColor)
+	for k, v := range m {
+		ColorValues[k] = v
+		ValuesColor[v] = k
+	}
+	colorMu.Unlock()
+}
+
+// MergeColorValues adds or overwrites entries in ColorValues and ValuesColor
+// from the supplied map, leaving existing entries that are not in m untouched.
+func MergeColorValues(m map[Color]int32) {
+	colorMu.Lock()
+	for k, v := range m {
+		ColorValues[k] = v
+		ValuesColor[v] = k
+	}
+	colorMu.Unlock()
+}
 
 // ColorValues maps color constants to their RGB values.
 var ColorValues = map[Color]int32{
@@ -1410,11 +1485,14 @@ func (c Color) String() string {
 // if passed true as an argument it will falls back to
 // the CSS hex string if no W3C name found '#ABCDEF'
 func (c Color) Name(css ...bool) string {
+	colorMu.RLock()
 	for name, hex := range ColorNames {
 		if c == hex {
+			colorMu.RUnlock()
 			return name
 		}
 	}
+	colorMu.RUnlock()
 	if len(css) > 0 && css[0] {
 		return c.CSS()
 	}
@@ -1431,7 +1509,10 @@ func (c Color) Hex() int32 {
 	if c&ColorIsRGB != 0 {
 		return int32(c & 0xffffff)
 	}
-	if v, ok := ColorValues[c]; ok {
+	colorMu.RLock()
+	v, ok := ColorValues[c]
+	colorMu.RUnlock()
+	if ok {
 		return v
 	}
 	return -1
@@ -1472,7 +1553,9 @@ func NewRGBColor(r, g, b int32) Color {
 // if the color happens to be one of ColorNames, then a named color is returned.
 func NewColor(r, g, b int32) Color {
 	c := NewRGBColor(r, g, b)
+	colorMu.RLock()
 	namedColor, ok := ValuesColor[int32(c)]
+	colorMu.RUnlock()
 	if ok {
 		return namedColor
 	}
@@ -1487,7 +1570,10 @@ func NewHexColor(v int32) Color {
 // GetColor creates a Color from a color name (W3C name). A hex value may
 // be supplied as a string in the format "#ffffff".
 func GetColor(name string) Color {
-	if c, ok := ColorNames[name]; ok {
+	colorMu.RLock()
+	c, ok := ColorNames[name]
+	colorMu.RUnlock()
+	if ok {
 		return c
 	}
 	if len(name) == 7 && name[0] == '#' {
