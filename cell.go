@@ -160,14 +160,32 @@ func ClearDirty(c *Cell) {
 }
 
 // Resize is used to resize the cells array, with different dimensions,
-// while preserving the original contents.  The cells will be invalidated
-// so that they can be redrawn.
+// while preserving the original contents within the overlapping
+// rectangle. Cells within that overlap are invalidated so that they
+// are redrawn on the next Show/Sync. Cells outside the overlap
+// (newly exposed area, when enlarging) are zero-valued.
 func (cb *CellBuffer) Resize(w, h int) {
 	if cb.h == h && cb.w == w {
 		return
 	}
 
 	newc := make([]Cell, w*h)
+	minW, minH := w, h
+	if cb.w < minW {
+		minW = cb.w
+	}
+	if cb.h < minH {
+		minH = cb.h
+	}
+	for y := 0; y < minH; y++ {
+		for x := 0; x < minW; x++ {
+			c := cb.cells[(y*cb.w)+x]
+			// Invalidate so the next draw repaints the cell at its
+			// new position in the buffer.
+			c.lastMain = 0
+			newc[(y*w)+x] = c
+		}
+	}
 	cb.cells = newc
 	cb.h = h
 	cb.w = w
