@@ -1,0 +1,24 @@
+workspace:
+  notice:
+    literal: |
+      # Welcome to tcell
+
+      This is a lightweight, performance-focused fork of
+      [gdamore/tcell](https://github.com/gdamore/tcell) — a vte client
+      for building text user interfaces.
+
+      Heads up: this module is the low-level rendering backend. For building
+      TUI applications you should mostly use
+      [rune-go-sdk](https://github.com/unstablebuild/rune-go-sdk) and its
+      `component` and `handler` packages, which sit on top of tcell.
+
+      Helpful tips:
+      - Compile with `go build ./...` and run tests with `go test ./...`.
+      - Cross-compile across platforms with `./test_crosscompile.sh`.
+      - Install the pre-commit hook once with `pre-commit install`.
+      - The render path is lock-free and allocation-light — keep it that way
+        when making changes.
+      - See `README.md` for more on what this fork changes and why.
+
+      Happy hacking!
+    show: once
